@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #endif // __cplusplus
 
-
 #if !defined(SK_C_API)
 #if defined(SKIA_C_DLL)
 #if defined(_MSC_VER)
@@ -17,18 +16,16 @@
 #define SK_C_API __declspec(dllimport)
 #endif
 #else
-#define SK_C_API extern
+#define SK_C_API __attribute__((visibility("default")))
 #endif
 #else
 #define SK_C_API
 #endif
 #endif
 
-
-
-
 #ifdef __cplusplus
 extern "C"
+
 {
 #endif // __cplusplus
 
