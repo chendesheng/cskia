@@ -744,6 +744,7 @@ extern "C"
 	SK_C_API sk_font_t *sk_font_new_with_values(sk_typeface_t *typeface, float size, float scaleX, float skewX);
 	SK_C_API void sk_font_set_force_auto_hinting(sk_font_t *font, bool value);
 	SK_C_API void sk_font_dump(sk_font_t *font);
+	
 	SK_C_API void sk_font_set_hinting(sk_font_t *font, sk_font_hinting_t value);
 	SK_C_API void sk_font_set_subpixel(sk_font_t *font, bool value);
 	SK_C_API int sk_font_text_to_glyphs(const sk_font_t *font, const void *text, size_t byteLength, sk_text_encoding_t encoding, uint16_t glyphs[], int maxGlyphCount);
@@ -885,6 +886,7 @@ extern "C"
 	SK_C_API int sk_path_get_points(const sk_path_t *cpath, sk_point_t *points, int max);
 	SK_C_API sk_path_fill_type_t sk_path_get_filltype(sk_path_t *cpath);
 	SK_C_API bool sk_path_get_last_point(const sk_path_t *cpath, sk_point_t *point);
+	SK_C_API bool sk_path_is_empty(const sk_path_t *cpath);
 	SK_C_API void sk_path_line_to(sk_path_t *cpath, float x, float y);
 	SK_C_API void sk_path_move_to(sk_path_t *cpath, float x, float y);
 	SK_C_API sk_path_t *sk_path_new(void);
