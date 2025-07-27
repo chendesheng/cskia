@@ -23,11 +23,10 @@
 #endif
 #endif
 
-#ifdef __cplusplus
+ 
 extern "C"
-
 {
-#endif // __cplusplus
+
 
 	// ===== Types from include/core/SkString.h =====
 
@@ -481,6 +480,16 @@ extern "C"
 		SK_FONT_HINTING_FULL,	// modifies glyph outlines for maximum contrast
 	} sk_font_hinting_t;
 
+
+	typedef enum
+	{
+		SK_FONT_EDGING_ALIAS,
+		SK_FONT_EDGING_ANTIALIAS, 
+		SK_FONT_EDGING_SUBPIXEL_ANTIALIAS, 
+	} sk_font_edging_t;
+
+
+
 	typedef enum
 	{
 		SK_TEXT_ENCODING_UTF8,	   // uses bytes to represent UTF-8 or ASCII
@@ -641,6 +650,10 @@ extern "C"
 
 	// ======================================================
 
+
+
+
+
 	// ===== Functions from include/gpu/GrBackendSurface.h =====
 	SK_C_API gr_backendrendertarget_t *gr_backendrendertarget_new_gl(int width, int height, int samples, int stencils, const gr_gl_framebufferinfo_t *glInfo);
 	SK_C_API void gr_backendrendertarget_delete(gr_backendrendertarget_t *rendertarget);
@@ -681,7 +694,9 @@ extern "C"
 	SK_C_API void sk_canvas_draw_simple_text(sk_canvas_t *canvas, const void *text, size_t byte_length, sk_text_encoding_t encoding, float x, float y, const sk_font_t *cfont, const sk_paint_t *cpaint);
 	
 	SK_C_API void sk_canvas_draw_string(sk_canvas_t *canvas, const char str[], float x, float y, const sk_font_t *cfont, const sk_paint_t *cpaint);
+	//SK_C_API void sk_canvas_draw_string(sk_canvas_t *canvas, const sk_string_t *str, float x, float y, const sk_font_t *cfont, const sk_paint_t *cpaint);
 
+	
 	SK_C_API void sk_canvas_draw_text_blob(sk_canvas_t *canvas, sk_text_blob_t *text, float x, float y, const sk_paint_t *paint);
 	SK_C_API bool sk_canvas_get_local_clip_bounds(sk_canvas_t *canvas, sk_rect_t *cbounds);
 	SK_C_API int sk_canvas_get_save_count(sk_canvas_t *canvas);
@@ -735,8 +750,13 @@ extern "C"
 	SK_C_API void sk_font_get_xpos(const sk_font_t *font, const uint16_t glyphs[], int count, float xpos[], float origin);
 	SK_C_API float sk_font_measure_text(const sk_font_t *font, const void *text, size_t byteLength, sk_text_encoding_t encoding, sk_rect_t *bounds, const sk_paint_t *paint);
 	SK_C_API sk_font_t *sk_font_new_with_values(sk_typeface_t *typeface, float size, float scaleX, float skewX);
+	//SK_C_API sk_font_t *sk_font_new_with_values(sk_typeface_t *typeface);
+
+	SK_C_API void sk_font_dump(sk_font_t *font);
+
 	SK_C_API void sk_font_set_force_auto_hinting(sk_font_t *font, bool value);
 	SK_C_API void sk_font_set_hinting(sk_font_t *font, sk_font_hinting_t value);
+	SK_C_API void sk_font_set_edging(sk_font_t *font, sk_font_edging_t value);
 	SK_C_API void sk_font_set_subpixel(sk_font_t *font, bool value);
 	SK_C_API int sk_font_text_to_glyphs(const sk_font_t *font, const void *text, size_t byteLength, sk_text_encoding_t encoding, uint16_t glyphs[], int maxGlyphCount);
 	SK_C_API uint16_t sk_font_unichar_to_glyph(const sk_font_t *font, int32_t unichar);
@@ -877,7 +897,6 @@ extern "C"
 	SK_C_API int sk_path_get_points(const sk_path_t *cpath, sk_point_t *points, int max);
 	SK_C_API sk_path_fill_type_t sk_path_get_filltype(sk_path_t *cpath);
 	SK_C_API bool sk_path_get_last_point(const sk_path_t *cpath, sk_point_t *point);
-	SK_C_API bool sk_path_is_empty(const sk_path_t *cpath);
 	SK_C_API void sk_path_line_to(sk_path_t *cpath, float x, float y);
 	SK_C_API void sk_path_move_to(sk_path_t *cpath, float x, float y);
 	SK_C_API sk_path_t *sk_path_new(void);
@@ -929,8 +948,8 @@ extern "C"
 	SK_C_API sk_shader_t *sk_shader_with_local_matrix(const sk_shader_t *shader, const sk_matrix_t *localMatrix);
 
 	// ===== Functions from include/core/SkString.h =====
-	SK_C_API sk_string_t *sk_string_new(const char *text, size_t len);
-	SK_C_API sk_string_t *sk_string_new_empty(void);
+	SK_C_API sk_string_t * _stdcall sk_string_new(const char *text, size_t len);
+	SK_C_API sk_string_t * _stdcall sk_string_new_empty(void);
 	SK_C_API void sk_string_delete(const sk_string_t *str);
 	SK_C_API const char *sk_string_get_c_str(const sk_string_t *str);
 	SK_C_API size_t sk_string_get_size(const sk_string_t *str);
@@ -941,6 +960,8 @@ extern "C"
 	SK_C_API sk_surface_t *sk_surface_make_surface(sk_surface_t *surface, int width, int height);
 	SK_C_API sk_image_t *sk_surface_make_image_snapshot(sk_surface_t *surface);
 	SK_C_API sk_canvas_t *sk_surface_get_canvas(sk_surface_t *surface);
+	SK_C_API sk_canvas_t *sk_surface_make_canvas_svg(const sk_rect_t *bounds, sk_wstream_t *stream, uint32_t flags); 
+	
 	SK_C_API sk_surface_t *sk_surface_new_backend_render_target(gr_direct_context_t *context, const gr_backendrendertarget_t *target, gr_surface_origin_t origin, sk_color_type_t colorType, sk_color_space_t *colorspace, const sk_surface_props_t *props);
 	SK_C_API void sk_surface_unref(sk_surface_t *surface);
 
@@ -959,7 +980,9 @@ extern "C"
 	SK_C_API void sk_textblob_get_bounds(const sk_text_blob_t *blob, sk_rect_t *bounds);
 	SK_C_API int sk_textblob_get_intercepts(const sk_text_blob_t *blob, const float bounds[2], float intervals[], const sk_paint_t *paint);
 	SK_C_API sk_text_blob_t *sk_textblob_make_from_text(const void *text, size_t byteLength, const sk_font_t *font, sk_text_encoding_t encoding);
+
 	SK_C_API sk_text_blob_t *sk_textblob_make_from_string(const char *text, const sk_font_t *font, sk_text_encoding_t encoding);
+	
 	SK_C_API void sk_textblob_unref(const sk_text_blob_t *blob);
 
 	// ===== Functions from include/core/SkTypeface.h =====
@@ -990,14 +1013,15 @@ extern "C"
 	SK_C_API void sk_document_end_page(sk_document_t *doc);
 	SK_C_API void sk_document_close(sk_document_t *doc);
 	SK_C_API void sk_document_abort(sk_document_t *doc);
-		// ===== Functions from include/docs/SkPDFDocument.h =====
+
+	// ===== Functions from include/docs/SkPDFDocument.h =====
 	SK_C_API sk_document_t *sk_document_make_pdf(sk_wstream_t *stream, sk_metadata_t *metadata);
 
 	// ===== Functions from include/codec/SkCodec.h =====
 	SK_C_API void register_image_codecs();
 
-#ifdef __cplusplus
+
 }
-#endif // __cplusplus
+
 
 #endif // SKIA_DEFINED
