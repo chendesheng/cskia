@@ -1,8 +1,5 @@
 #include "sk_capi.h"
 
-
-
-
 #include "include/codec/SkBmpDecoder.h"
 #include "include/codec/SkGifDecoder.h"
 #include "include/codec/SkIcoDecoder.h"
@@ -378,13 +375,6 @@ gr_direct_context_t *gr_direct_context_make_gl(const gr_glinterface_t *glInterfa
 	return reinterpret_cast<gr_direct_context_t *>(GrDirectContexts::MakeGL(sk_ref_sp(reinterpret_cast<const GrGLInterface *>(glInterface))).release());
 }
 
-/*
-gr_direct_context_t *gr_direct_context_make_vulkan(const gr_vulkaninterface_t *VulkanBackendContext )
-{
-	return reinterpret_cast<gr_direct_context_t *>(GrDirectContexts::MakeVulkan::MakeVulkan(vkBackendContext));
-}
-*/
-
 // ===== Functions from include/gpu/GrDirectContext.h =====
 void gr_direct_context_abandon_context(gr_direct_context_t *context)
 {
@@ -535,16 +525,14 @@ void sk_canvas_draw_simple_text(sk_canvas_t *canvas, const void *text, size_t by
 	reinterpret_cast<SkCanvas *>(canvas)->drawSimpleText(text, byte_length, (SkTextEncoding)encoding, x, y, *reinterpret_cast<const SkFont *>(cfont), *reinterpret_cast<const SkPaint *>(cpaint));
 }
 
+void sk_canvas_draw_text_blob(sk_canvas_t *canvas, sk_text_blob_t *text, float x, float y, const sk_paint_t *cpaint)
+{
+	reinterpret_cast<SkCanvas *>(canvas)->drawTextBlob(reinterpret_cast<SkTextBlob *>(text), x, y, *reinterpret_cast<const SkPaint *>(cpaint));
+}
 
 void sk_canvas_draw_string(sk_canvas_t *canvas, const char str[], float x, float y, const sk_font_t *cfont, const sk_paint_t *cpaint)
 {
 	reinterpret_cast<SkCanvas *>(canvas)->drawString(str, x, y, *reinterpret_cast<const SkFont *>(cfont), *reinterpret_cast<const SkPaint *>(cpaint));
-}
-
-
-void sk_canvas_draw_text_blob(sk_canvas_t *canvas, sk_text_blob_t *text, float x, float y, const sk_paint_t *cpaint)
-{
-	reinterpret_cast<SkCanvas *>(canvas)->drawTextBlob(reinterpret_cast<SkTextBlob *>(text), x, y, *reinterpret_cast<const SkPaint *>(cpaint));
 }
 
 bool sk_canvas_get_local_clip_bounds(sk_canvas_t *canvas, sk_rect_t *cbounds)
@@ -747,13 +735,10 @@ float sk_font_measure_text(const sk_font_t *font, const void *text, size_t byteL
 	return reinterpret_cast<const SkFont *>(font)->measureText(text, byteLength, (SkTextEncoding)encoding, reinterpret_cast<SkRect *>(bounds), reinterpret_cast<const SkPaint *>(paint));
 }
 
-
 sk_font_t *sk_font_new_with_values(sk_typeface_t *typeface, float size, float scaleX, float skewX)
 {
 	return reinterpret_cast<sk_font_t *>(new SkFont(sk_ref_sp(reinterpret_cast<SkTypeface *>(typeface)), size, scaleX, skewX));
 }
-
-
 
 void sk_font_dump(sk_font_t *font)
 {
@@ -765,14 +750,14 @@ void sk_font_set_force_auto_hinting(sk_font_t *font, bool value)
 	reinterpret_cast<SkFont *>(font)->setForceAutoHinting(value);
 }
 
-void sk_font_set_hinting(sk_font_t *font, sk_font_hinting_t value)
-{
-	reinterpret_cast<SkFont *>(font)->setHinting((SkFontHinting)value);
-}
-
 void sk_font_set_edging(sk_font_t *font, sk_font_edging_t value)
 {
 	reinterpret_cast<SkFont *>(font)->setEdging((SkFont::Edging)value);
+}
+
+void sk_font_set_hinting(sk_font_t *font, sk_font_hinting_t value)
+{
+	reinterpret_cast<SkFont *>(font)->setHinting((SkFontHinting)value);
 }
 
 void sk_font_set_subpixel(sk_font_t *font, bool value)
@@ -840,7 +825,7 @@ sk_font_mgr_t *sk_fontmgr_ref_default(void)
 #elif defined(SK_FONTMGR_FONTCONFIG_AVAILABLE)
 	return reinterpret_cast<sk_font_mgr_t *>(SkFontMgr_New_FontConfig(nullptr).release());
 #else
-#error "No font manager available for this platform"
+
 #endif
 }
 
@@ -1733,7 +1718,7 @@ sk_string_t *sk_string_new(const char *text, size_t len)
 	return reinterpret_cast<sk_string_t *>(new SkString(text, len));
 }
 
-sk_string_t *sk_string_new_empty(void)
+extern sk_string_t *sk_string_new_empty(void)
 {
 	return reinterpret_cast<sk_string_t *>(new SkString());
 }
@@ -1776,11 +1761,10 @@ sk_canvas_t *sk_surface_get_canvas(sk_surface_t *surface)
 
 sk_canvas_t  *sk_surface_make_canvas_svg(const sk_rect_t *bounds, sk_wstream_t *stream, uint32_t flags)
 { 
+	
 	return reinterpret_cast<sk_canvas_t *>((SkSVGCanvas::Make(reinterpret_cast<const SkRect &>(*bounds), reinterpret_cast<SkWStream *>(stream), flags)).release());
 
 }
-
-
 
 sk_surface_t *sk_surface_new_backend_render_target(gr_direct_context_t *context, const gr_backendrendertarget_t *target, gr_surface_origin_t origin, sk_color_type_t colorType, sk_color_space_t *colorspace, const sk_surface_props_t *props)
 {
@@ -1993,6 +1977,7 @@ static void sk_convertDateTime(SkPDF::DateTime *to, sk_date_time_t *from)
 	to->fSecond = from->second;
 }
 
+
 sk_document_t *sk_document_make_pdf(sk_wstream_t *stream, sk_metadata_t *metadata)
 {
 	SkPDF::Metadata md;
@@ -2026,6 +2011,11 @@ sk_document_t *sk_document_make_pdf(sk_wstream_t *stream, sk_metadata_t *metadat
 	md.fEncodingQuality = metadata->encodingQuality;
 	return reinterpret_cast<sk_document_t *>(new SkPDFDocument(reinterpret_cast<SkWStream *>(stream), md));
 }
+
+
+
+
+
 
 // ===== Functions from include/codec/SkCodec.h =====
 
