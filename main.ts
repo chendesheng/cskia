@@ -146,12 +146,13 @@ setOnWindowResize(win, (width, height) => {
 });
 
 setOnRender(win, () => {
-  const texture = winLib.symbols.window_begin_frame(win);
-  if (texture) {
+  const drawable = winLib.symbols.window_get_next_drawable(win);
+  if (drawable) {
     try {
       const w = winLib.symbols.window_get_width(win) as number;
       const h = winLib.symbols.window_get_height(win) as number;
       const scale = winLib.symbols.window_get_scale(win) as number;
+      const texture = winLib.symbols.drawable_get_texture(drawable);
 
       const target = createBackendRenderTarget(w, h, texture);
       const surface = skLib.symbols.sk_surface_new_backend_render_target(
@@ -170,7 +171,7 @@ setOnRender(win, () => {
       }
       skLib.symbols.gr_backendrendertarget_delete(target);
     } finally {
-      winLib.symbols.window_end_frame(win);
+      winLib.symbols.present_drawable(queue, drawable);
     }
   }
 });

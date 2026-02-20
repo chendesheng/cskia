@@ -82,12 +82,16 @@ export const winLib = Deno.dlopen(libPath, {
 
   // --- Frame ---
 
-  window_begin_frame: {
+  window_get_next_drawable: {
     parameters: ["pointer"],
     result: "pointer",
   },
-  window_end_frame: {
+  drawable_get_texture: {
     parameters: ["pointer"],
+    result: "pointer",
+  },
+  present_drawable: {
+    parameters: ["pointer", "pointer"],
     result: "void",
   },
   window_get_scale: {

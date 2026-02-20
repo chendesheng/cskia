@@ -16,7 +16,6 @@ final class MetalView: NSView {
     unowned var state: WindowState!
 
     private var link: CADisplayLink?
-    private var activeDrawable: CAMetalDrawable?
 
     override init(frame: NSRect) {
         guard let dev = MTLCreateSystemDefaultDevice() else {
@@ -46,7 +45,6 @@ final class MetalView: NSView {
 
     deinit {
         link?.invalidate()
-        activeDrawable = nil
     }
 
     // MARK: Display link
@@ -163,29 +161,14 @@ final class MetalView: NSView {
         Int32(metalLayer.drawableSize.height)
     }
 
-    /// Returns the Metal texture pointer from the next drawable, or nil.
-    func beginFrame() -> UnsafeMutableRawPointer? {
-        guard activeDrawable == nil else { return nil }
-
+    /// Acquires the next drawable, or nil if the layer size is invalid.
+    func getNextDrawable() -> UnsafeMutableRawPointer? {
         let drawableSize = metalLayer.drawableSize
         let w = Int32(drawableSize.width)
         let h = Int32(drawableSize.height)
         guard w > 0, h > 0 else { return nil }
 
         guard let drawable = metalLayer.nextDrawable() else { return nil }
-        activeDrawable = drawable
-
-        return Unmanaged.passUnretained(drawable.texture as AnyObject).toOpaque()
-    }
-
-    /// Presents the active drawable and releases it.
-    func endFrame() {
-        guard let drawable = activeDrawable else { return }
-        defer { activeDrawable = nil }
-
-        if let cmd = commandQueue.makeCommandBuffer() {
-            cmd.present(drawable)
-            cmd.commit()
-        }
+        return Unmanaged.passRetained(drawable as AnyObject).toOpaque()
     }
 }

@@ -7,7 +7,8 @@
  *   window_set_on_key_down / window_set_on_key_up
  *   window_set_on_window_close / window_set_on_window_resize / window_set_on_render
  *   window_get_metal_device / window_get_metal_queue
- *   window_begin_frame / window_end_frame / window_get_scale
+ *   window_get_next_drawable / drawable_get_texture / present_drawable
+ *   window_get_scale
  *   window_set_title / window_set_width / window_set_height
  *   window_set_close_button_visible / window_set_miniaturize_button_visible / window_set_zoom_button_visible
  *   window_set_resizable
@@ -17,6 +18,8 @@
  */
 
 import Cocoa
+import Metal
+import QuartzCore
 import Carbon.HIToolbox
 
 // MARK: - Constants
@@ -303,16 +306,31 @@ public func windowGetMetalQueue(_ win: UnsafeMutableRawPointer?) -> UnsafeMutabl
 
 // MARK: - Frame
 
-@_cdecl("window_begin_frame")
-public func windowBeginFrame(_ win: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+@_cdecl("window_get_next_drawable")
+public func windowGetNextDrawable(_ win: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let win else { return nil }
-    return stateFrom(win).metalView.beginFrame()
+    return stateFrom(win).metalView.getNextDrawable()
 }
 
-@_cdecl("window_end_frame")
-public func windowEndFrame(_ win: UnsafeMutableRawPointer?) {
-    guard let win else { return }
-    stateFrom(win).metalView.endFrame()
+@_cdecl("drawable_get_texture")
+public func drawableGetTexture(_ drawablePtr: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let drawablePtr else { return nil }
+    let drawable = Unmanaged<AnyObject>.fromOpaque(drawablePtr)
+        .takeUnretainedValue() as! CAMetalDrawable
+    return Unmanaged.passUnretained(drawable.texture as AnyObject).toOpaque()
+}
+
+@_cdecl("present_drawable")
+public func presentDrawable(_ queuePtr: UnsafeMutableRawPointer?, _ drawablePtr: UnsafeMutableRawPointer?) {
+    guard let queuePtr, let drawablePtr else { return }
+    let queue = Unmanaged<AnyObject>.fromOpaque(queuePtr)
+        .takeUnretainedValue() as! MTLCommandQueue
+    let drawable = Unmanaged<AnyObject>.fromOpaque(drawablePtr)
+        .takeRetainedValue() as! CAMetalDrawable
+    if let cmd = queue.makeCommandBuffer() {
+        cmd.present(drawable)
+        cmd.commit()
+    }
 }
 
 @_cdecl("window_get_scale")
