@@ -1,2 +1,6 @@
 /skia
 /dist
+.DS_Store
+*.o
+*.dylib
+demo
