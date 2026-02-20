@@ -33,6 +33,45 @@ extern "C"
 
 	typedef struct sk_string_t sk_string_t;
 
+	// ===== Window/event interop types =====
+
+	typedef struct
+	{
+		uint32_t mod_bits;
+		int32_t button;
+		double x;
+		double y;
+	} window_mouse_event_t;
+
+	typedef struct
+	{
+		uint32_t mod_bits;
+		uint16_t key_code;
+		uint8_t is_repeat;
+		uint8_t reserved0;
+		int32_t special_key;
+		uint32_t key;
+	} window_key_event_t;
+
+	typedef struct
+	{
+		int32_t width;
+		int32_t height;
+	} window_resize_event_t;
+
+	typedef union
+	{
+		window_mouse_event_t mouse;
+		window_key_event_t key;
+		window_resize_event_t resize;
+	} window_event_data_t;
+
+	typedef struct
+	{
+		uint64_t type;
+		window_event_data_t data;
+	} window_event_t;
+
 	// ===== Types from include/core/SkTextBlob.h =====
 
 	typedef struct sk_text_blob_t sk_text_blob_t;

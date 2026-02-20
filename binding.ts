@@ -10,6 +10,74 @@ import { join, dirname, fromFileUrl } from "jsr:@std/path";
 
 const libDir = join(dirname(fromFileUrl(import.meta.url)), ".build", "release");
 const libPath = join(libDir, "libSkiaWindow.dylib");
+const WINDOW_MOUSE_EVENT_STRUCT = {
+  struct: ["u32", "i32", "f64", "f64"],
+} as const satisfies Deno.NativeStructType;
+const WINDOW_KEY_EVENT_STRUCT = {
+  struct: ["u32", "u16", "u8", "u8", "i32", "u32"],
+} as const satisfies Deno.NativeStructType;
+const WINDOW_RESIZE_EVENT_STRUCT = {
+  struct: ["i32", "i32"],
+} as const satisfies Deno.NativeStructType;
+type StructType = Deno.NativeStructType;
+type HeaderNativeType = "i32";
+type EventNativeType = HeaderNativeType | "u64" | "u32" | "f64" | "u16" | "u8" | StructType;
+
+function primitiveSize(nativeType: HeaderNativeType | "u64" | "u32" | "f64" | "u16" | "u8"): number {
+  switch (nativeType) {
+    case "u8":
+      return 1;
+    case "u16":
+      return 2;
+    case "i32":
+    case "u32":
+      return 4;
+    case "u64":
+    case "f64":
+      return 8;
+  }
+}
+
+function typeInfo(nativeType: EventNativeType): { size: number; align: number } {
+  if (typeof nativeType !== "object") {
+    const size = primitiveSize(nativeType);
+    return { size, align: size };
+  }
+  return structInfo(nativeType);
+}
+
+function structInfo(structType: StructType): { size: number; align: number } {
+  let size = 0;
+  let maxAlign = 1;
+  for (const fieldType of structType.struct) {
+    const { size: fieldSize, align } = typeInfo(fieldType as EventNativeType);
+    size = Math.ceil(size / align) * align;
+    size += fieldSize;
+    maxAlign = Math.max(maxAlign, align);
+  }
+  return {
+    size: Math.ceil(size / maxAlign) * maxAlign,
+    align: maxAlign,
+  };
+}
+
+function unionPayloadSize(...members: readonly StructType[]): number {
+  return members.reduce((max, member) => Math.max(max, structInfo(member).size), 0);
+}
+
+const WINDOW_EVENT_PAYLOAD_SIZE = unionPayloadSize(
+  WINDOW_MOUSE_EVENT_STRUCT,
+  WINDOW_KEY_EVENT_STRUCT,
+  WINDOW_RESIZE_EVENT_STRUCT,
+);
+// Deno doesn't support C unions directly; use the most aligned/large member to
+// preserve ABI alignment/size for the payload region.
+const WINDOW_EVENT_PAYLOAD_STRUCT = WINDOW_MOUSE_EVENT_STRUCT;
+// Represent return-by-value as raw 32-byte aligned payload (u64[4]) to avoid
+// nested-struct ABI mismatches when crossing FFI boundaries.
+const WINDOW_EVENT_STRUCT = {
+  struct: ["u64", "u64", "u64", "u64"],
+} as const satisfies Deno.NativeStructType;
 
 // ---------------------------------------------------------------------------
 // FFI symbol definitions
@@ -39,7 +107,7 @@ export const lib = Deno.dlopen(libPath, {
     nonblocking: false,
   },
 
-  /** Poll one queued event into caller-provided buffer. Returns false when queue is empty. */
+  /** Poll one queued event into caller-provided event buffer. */
   window_poll_event: {
     parameters: ["pointer", "buffer"],
     result: "bool",
@@ -337,22 +405,52 @@ const MOD_CTRL = 1 << 0;
 const MOD_SHIFT = 1 << 1;
 const MOD_ALT = 1 << 2;
 const MOD_META = 1 << 3;
+type HeaderFieldName = "type" | "payload";
+type HeaderField = { name: HeaderFieldName; type: EventNativeType };
+const WINDOW_EVENT_HEADER_FIELDS: readonly HeaderField[] = [
+  { name: "type", type: "u64" },
+  { name: "payload", type: WINDOW_EVENT_PAYLOAD_STRUCT },
+] as const;
 
-const WINDOW_EVENT_SIZE = 108;
-const OFF_TYPE = 0;
-const OFF_MOD_BITS = 4;
-const OFF_X = 8;
-const OFF_Y = 16;
-const OFF_BUTTON = 24;
-const OFF_KEY_CODE = 28;
-const OFF_IS_REPEAT = 30;
-const OFF_WIDTH = 32;
-const OFF_HEIGHT = 36;
-const OFF_SPECIAL_KEY = 40;
-const OFF_KEY = 44;
-const KEY_VALUE_MAX_BYTES = 64;
+function buildStructLayout<FieldName extends string>(
+  fields: ReadonlyArray<{ name: FieldName; type: EventNativeType }>,
+): { size: number; offsets: Readonly<Record<FieldName, number>> } {
+  let size = 0;
+  let maxAlign = 1;
+  const offsets = {} as Record<FieldName, number>;
+  for (const field of fields) {
+    const { size: fieldSize, align } = typeInfo(field.type);
+    size = Math.ceil(size / align) * align;
+    offsets[field.name] = size;
+    size += fieldSize;
+    maxAlign = Math.max(maxAlign, align);
+  }
+  return { size: Math.ceil(size / maxAlign) * maxAlign, offsets };
+}
 
-const eventBuffer = new Uint8Array(new ArrayBuffer(WINDOW_EVENT_SIZE));
+const WINDOW_EVENT_LAYOUT = buildStructLayout(WINDOW_EVENT_HEADER_FIELDS);
+const MOUSE_LAYOUT = buildStructLayout([
+  { name: "modBits", type: "u32" },
+  { name: "button", type: "i32" },
+  { name: "x", type: "f64" },
+  { name: "y", type: "f64" },
+] as const);
+const KEY_LAYOUT = buildStructLayout([
+  { name: "modBits", type: "u32" },
+  { name: "keyCode", type: "u16" },
+  { name: "isRepeat", type: "u8" },
+  { name: "reserved0", type: "u8" },
+  { name: "specialKey", type: "i32" },
+  { name: "key", type: "u32" },
+] as const);
+const RESIZE_LAYOUT = buildStructLayout([
+  { name: "width", type: "i32" },
+  { name: "height", type: "i32" },
+] as const);
+
+const eventBuffer = new Uint8Array(
+  new ArrayBuffer(structInfo(WINDOW_EVENT_STRUCT).size),
+);
 const eventView = new DataView(eventBuffer.buffer);
 const utf8Encoder = new TextEncoder();
 const utf8Decoder = new TextDecoder();
@@ -410,19 +508,34 @@ export enum SpecialKey {
   F12 = 39,
 }
 
-export type Event = {
-  type: EventType;
-  mods: Modifiers;
-  x?: number;
-  y?: number;
-  button?: number;
-  keyCode?: number;
-  specialKey?: SpecialKey;
-  key?: string;
-  isRepeat?: boolean;
-  width?: number;
-  height?: number;
+type EventBase<T extends EventType> = {
+  type: T;
 };
+export type WindowCloseEvent = EventBase<"windowClose">;
+export type WindowFrameReadyEvent = EventBase<"windowFrameReady">;
+export type WindowResizeEvent = EventBase<"windowResize"> & {
+  width: number;
+  height: number;
+};
+export type MouseEvent = EventBase<"mouseDown" | "mouseUp" | "mouseMove"> & {
+  mods: Modifiers;
+  x: number;
+  y: number;
+  button: number;
+};
+export type KeyEvent = EventBase<"keyDown" | "keyUp"> & {
+  mods: Modifiers;
+  keyCode: number;
+  specialKey: SpecialKey;
+  key: string;
+  isRepeat: boolean;
+};
+export type Event =
+  | WindowCloseEvent
+  | WindowFrameReadyEvent
+  | WindowResizeEvent
+  | MouseEvent
+  | KeyEvent;
 
 function decodeModifiers(modBits: number): Modifiers {
   return {
@@ -433,19 +546,24 @@ function decodeModifiers(modBits: number): Modifiers {
   };
 }
 
-function decodeNullTerminatedUtf8(offset: number, maxBytes: number): string {
-  const bytes = new Uint8Array(eventBuffer.buffer, offset, maxBytes);
-  let end = 0;
-  while (end < bytes.length && bytes[end] !== 0) {
-    end++;
+function decodeCodePoint(codePoint: number): string {
+  if (codePoint === 0) {
+    return "";
   }
-  return utf8Decoder.decode(bytes.subarray(0, end));
+  try {
+    return String.fromCodePoint(codePoint);
+  } catch {
+    return "";
+  }
 }
 
-function keyFromSpecialKey(specialKey: SpecialKey, textKey: string): string {
+function keyFromSpecialKey(specialKey: SpecialKey, keyCodePoint: number): string {
   switch (specialKey) {
     case SpecialKey.Text:
-      return textKey.length > 0 ? textKey : "Unidentified";
+      {
+        const key = decodeCodePoint(keyCodePoint);
+        return key.length > 0 ? key : "Unidentified";
+      }
     case SpecialKey.Dead:
       return "Dead";
     case SpecialKey.Unidentified:
@@ -516,78 +634,92 @@ function keyFromSpecialKey(specialKey: SpecialKey, textKey: string): string {
 }
 
 export function pollEvent(win: Deno.PointerValue): Event | null {
-  const hasEvent = lib.symbols.window_poll_event(win, eventBuffer) as boolean;
+  const hasEvent = lib.symbols.window_poll_event(win, eventBuffer);
   if (!hasEvent) {
     return null;
   }
-
-  const type = eventView.getInt32(OFF_TYPE, true);
-  const mods = decodeModifiers(eventView.getUint32(OFF_MOD_BITS, true));
+  const { offsets } = WINDOW_EVENT_LAYOUT;
+  const type = Number(eventView.getBigUint64(offsets.type, true));
 
   switch (type) {
     case EVENT_TYPE_WINDOW_CLOSE:
-      return { type: "windowClose", mods };
+      return { type: "windowClose" };
     case EVENT_TYPE_WINDOW_RESIZE:
       return {
         type: "windowResize",
-        mods,
-        width: eventView.getInt32(OFF_WIDTH, true),
-        height: eventView.getInt32(OFF_HEIGHT, true),
+        width: eventView.getInt32(offsets.payload + RESIZE_LAYOUT.offsets.width, true),
+        height: eventView.getInt32(offsets.payload + RESIZE_LAYOUT.offsets.height, true),
       };
     case EVENT_TYPE_WINDOW_FRAME_READY:
-      return { type: "windowFrameReady", mods };
+      return { type: "windowFrameReady" };
     case EVENT_TYPE_MOUSE_DOWN:
       return {
         type: "mouseDown",
-        mods,
-        x: eventView.getFloat64(OFF_X, true),
-        y: eventView.getFloat64(OFF_Y, true),
-        button: eventView.getInt32(OFF_BUTTON, true),
+        mods: decodeModifiers(
+          eventView.getUint32(offsets.payload + MOUSE_LAYOUT.offsets.modBits, true),
+        ),
+        x: eventView.getFloat64(offsets.payload + MOUSE_LAYOUT.offsets.x, true),
+        y: eventView.getFloat64(offsets.payload + MOUSE_LAYOUT.offsets.y, true),
+        button: eventView.getInt32(offsets.payload + MOUSE_LAYOUT.offsets.button, true),
       };
     case EVENT_TYPE_MOUSE_UP:
       return {
         type: "mouseUp",
-        mods,
-        x: eventView.getFloat64(OFF_X, true),
-        y: eventView.getFloat64(OFF_Y, true),
-        button: eventView.getInt32(OFF_BUTTON, true),
+        mods: decodeModifiers(
+          eventView.getUint32(offsets.payload + MOUSE_LAYOUT.offsets.modBits, true),
+        ),
+        x: eventView.getFloat64(offsets.payload + MOUSE_LAYOUT.offsets.x, true),
+        y: eventView.getFloat64(offsets.payload + MOUSE_LAYOUT.offsets.y, true),
+        button: eventView.getInt32(offsets.payload + MOUSE_LAYOUT.offsets.button, true),
       };
     case EVENT_TYPE_MOUSE_MOVE:
       return {
         type: "mouseMove",
-        mods,
-        x: eventView.getFloat64(OFF_X, true),
-        y: eventView.getFloat64(OFF_Y, true),
-        button: eventView.getInt32(OFF_BUTTON, true),
+        mods: decodeModifiers(
+          eventView.getUint32(offsets.payload + MOUSE_LAYOUT.offsets.modBits, true),
+        ),
+        x: eventView.getFloat64(offsets.payload + MOUSE_LAYOUT.offsets.x, true),
+        y: eventView.getFloat64(offsets.payload + MOUSE_LAYOUT.offsets.y, true),
+        button: eventView.getInt32(offsets.payload + MOUSE_LAYOUT.offsets.button, true),
       };
     case EVENT_TYPE_KEY_DOWN: {
       const specialKey = eventView.getInt32(
-        OFF_SPECIAL_KEY,
+        offsets.payload + KEY_LAYOUT.offsets.specialKey,
         true,
       ) as SpecialKey;
-      const textKey = decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES);
+      const keyCodePoint = eventView.getUint32(
+        offsets.payload + KEY_LAYOUT.offsets.key,
+        true,
+      );
       return {
         type: "keyDown",
-        mods,
-        keyCode: eventView.getUint16(OFF_KEY_CODE, true),
+        mods: decodeModifiers(
+          eventView.getUint32(offsets.payload + KEY_LAYOUT.offsets.modBits, true),
+        ),
+        keyCode: eventView.getUint16(offsets.payload + KEY_LAYOUT.offsets.keyCode, true),
         specialKey,
-        key: keyFromSpecialKey(specialKey, textKey),
-        isRepeat: eventView.getUint8(OFF_IS_REPEAT) !== 0,
+        key: keyFromSpecialKey(specialKey, keyCodePoint),
+        isRepeat: eventView.getUint8(offsets.payload + KEY_LAYOUT.offsets.isRepeat) !== 0,
       };
     }
     case EVENT_TYPE_KEY_UP: {
       const specialKey = eventView.getInt32(
-        OFF_SPECIAL_KEY,
+        offsets.payload + KEY_LAYOUT.offsets.specialKey,
         true,
       ) as SpecialKey;
-      const textKey = decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES);
+      const keyCodePoint = eventView.getUint32(
+        offsets.payload + KEY_LAYOUT.offsets.key,
+        true,
+      );
       return {
         type: "keyUp",
-        mods,
-        keyCode: eventView.getUint16(OFF_KEY_CODE, true),
+        mods: decodeModifiers(
+          eventView.getUint32(offsets.payload + KEY_LAYOUT.offsets.modBits, true),
+        ),
+        keyCode: eventView.getUint16(offsets.payload + KEY_LAYOUT.offsets.keyCode, true),
         specialKey,
-        key: keyFromSpecialKey(specialKey, textKey),
-        isRepeat: eventView.getUint8(OFF_IS_REPEAT) !== 0,
+        key: keyFromSpecialKey(specialKey, keyCodePoint),
+        isRepeat: eventView.getUint8(offsets.payload + KEY_LAYOUT.offsets.isRepeat) !== 0,
       };
     }
     default:

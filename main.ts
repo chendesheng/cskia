@@ -15,6 +15,7 @@
 import {
   createWindow,
   type Event,
+  type Modifiers,
   lib,
   paragraphBuilderAddText,
   pollEvent,
@@ -76,8 +77,8 @@ function onRender(
   symbols.sk_font_collection_unref(fontCollection);
 }
 
-function formatMods(event: Event): string {
-  const { ctrlKey, shiftKey, altKey, metaKey } = event.mods;
+function formatMods(mods: Modifiers): string {
+  const { ctrlKey, shiftKey, altKey, metaKey } = mods;
   return `{ctrlKey:${ctrlKey},shiftKey:${shiftKey},altKey:${altKey},metaKey:${metaKey}}`;
 }
 
@@ -86,15 +87,15 @@ function formatEvent(event: Event): string {
     case "mouseDown":
     case "mouseUp":
     case "mouseMove":
-      return `${event.type} x=${event.x} y=${event.y} button=${event.button} mods=${formatMods(event)}`;
+      return `${event.type} x=${event.x} y=${event.y} button=${event.button} mods=${formatMods(event.mods)}`;
     case "keyDown":
     case "keyUp":
-      return `${event.type} key=${JSON.stringify(event.key)} keyCode=${event.keyCode} isRepeat=${event.isRepeat} mods=${formatMods(event)}`;
+      return `${event.type} key=${JSON.stringify(event.key)} keyCode=${event.keyCode} isRepeat=${event.isRepeat} mods=${formatMods(event.mods)}`;
     case "windowResize":
-      return `${event.type} width=${event.width} height=${event.height} mods=${formatMods(event)}`;
+      return `${event.type} width=${event.width} height=${event.height}`;
     case "windowFrameReady":
     case "windowClose":
-      return `${event.type} mods=${formatMods(event)}`;
+      return `${event.type}`;
   }
 }
 

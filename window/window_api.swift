@@ -14,6 +14,7 @@
 
 import Cocoa
 import Carbon.HIToolbox
+import CSkia
 
 // MARK: - Lifecycle
 
@@ -56,21 +57,6 @@ private let KEY_KIND_F9: Int32 = 36
 private let KEY_KIND_F10: Int32 = 37
 private let KEY_KIND_F11: Int32 = 38
 private let KEY_KIND_F12: Int32 = 39
-private let KEY_VALUE_MAX_BYTES = 64
-
-private struct EventPayload {
-    let type: Int32
-    let modBits: UInt32
-    let x: Double
-    let y: Double
-    let button: Int32
-    let keyCode: UInt16
-    let isRepeat: UInt8
-    let width: Int32
-    let height: Int32
-    let specialKey: Int32
-    let key: String
-}
 
 private func modifierBits(from flags: NSEvent.ModifierFlags) -> UInt32 {
     var bits: UInt32 = 0
@@ -79,27 +65,6 @@ private func modifierBits(from flags: NSEvent.ModifierFlags) -> UInt32 {
     if flags.contains(.option) { bits |= MOD_ALT }
     if flags.contains(.command) { bits |= MOD_META }
     return bits
-}
-
-private func writeEvent(_ outEvent: UnsafeMutableRawPointer, payload: EventPayload) {
-    outEvent.storeBytes(of: payload.type, toByteOffset: 0, as: Int32.self)
-    outEvent.storeBytes(of: payload.modBits, toByteOffset: 4, as: UInt32.self)
-    outEvent.storeBytes(of: payload.x, toByteOffset: 8, as: Double.self)
-    outEvent.storeBytes(of: payload.y, toByteOffset: 16, as: Double.self)
-    outEvent.storeBytes(of: payload.button, toByteOffset: 24, as: Int32.self)
-    outEvent.storeBytes(of: payload.keyCode, toByteOffset: 28, as: UInt16.self)
-    outEvent.storeBytes(of: payload.isRepeat, toByteOffset: 30, as: UInt8.self)
-    outEvent.storeBytes(of: UInt8(0), toByteOffset: 31, as: UInt8.self)
-    outEvent.storeBytes(of: payload.width, toByteOffset: 32, as: Int32.self)
-    outEvent.storeBytes(of: payload.height, toByteOffset: 36, as: Int32.self)
-    outEvent.storeBytes(of: payload.specialKey, toByteOffset: 40, as: Int32.self)
-    for i in 0..<KEY_VALUE_MAX_BYTES {
-        outEvent.storeBytes(of: UInt8(0), toByteOffset: 44 + i, as: UInt8.self)
-    }
-    let keyBytes = Array(payload.key.utf8.prefix(KEY_VALUE_MAX_BYTES - 1))
-    for (i, b) in keyBytes.enumerated() {
-        outEvent.storeBytes(of: b, toByteOffset: 44 + i, as: UInt8.self)
-    }
 }
 
 private func isDeadKeyString(_ value: String) -> Bool {
@@ -177,17 +142,19 @@ private func specialKeyKind(for keyCode: UInt16) -> Int32? {
     }
 }
 
-private func keyboardEventData(_ event: NSEvent) -> (specialKey: Int32, key: String) {
+private func keyboardEventData(_ event: NSEvent) -> (specialKey: Int32, key: UInt32) {
     if let special = specialKeyKind(for: event.keyCode) {
-        return (special, "")
+        return (special, 0)
     }
     if let chars = event.characters, !chars.isEmpty {
         if isDeadKeyString(chars) {
-            return (KEY_KIND_DEAD, "")
+            return (KEY_KIND_DEAD, 0)
         }
-        return (KEY_KIND_TEXT, chars)
+        if let firstScalar = chars.unicodeScalars.first {
+            return (KEY_KIND_TEXT, firstScalar.value)
+        }
     }
-    return (KEY_KIND_UNIDENTIFIED, "")
+    return (KEY_KIND_UNIDENTIFIED, 0)
 }
 
 private func decodeUtf8(_ bytes: UnsafePointer<UInt8>?, _ length: Int) -> String? {
@@ -196,39 +163,91 @@ private func decodeUtf8(_ bytes: UnsafePointer<UInt8>?, _ length: Int) -> String
     return String(decoding: buffer, as: UTF8.self)
 }
 
-private func mousePayload(type: Int32, event: NSEvent, state: WindowState) -> EventPayload {
+private func mouseEventStruct(type: Int32, event: NSEvent, state: WindowState) -> window_event_t {
     let p = state.skiaView.convert(event.locationInWindow, from: nil)
     let flippedY = state.skiaView.bounds.height - p.y
-    return EventPayload(
-        type: type,
-        modBits: modifierBits(from: event.modifierFlags),
-        x: p.x,
-        y: flippedY,
-        button: Int32(event.buttonNumber),
-        keyCode: 0,
-        isRepeat: 0,
-        width: 0,
-        height: 0,
-        specialKey: KEY_KIND_NONE,
-        key: ""
-    )
+    var out = window_event_t()
+    out.type = UInt64(type)
+    out.data.mouse.mod_bits = modifierBits(from: event.modifierFlags)
+    out.data.mouse.x = p.x
+    out.data.mouse.y = flippedY
+    out.data.mouse.button = Int32(event.buttonNumber)
+    return out
 }
 
-private func keyboardPayload(type: Int32, event: NSEvent) -> EventPayload {
+private func keyboardEventStruct(type: Int32, event: NSEvent) -> window_event_t {
     let eventKey = keyboardEventData(event)
-    return EventPayload(
-        type: type,
-        modBits: modifierBits(from: event.modifierFlags),
-        x: 0,
-        y: 0,
-        button: 0,
-        keyCode: event.keyCode,
-        isRepeat: event.isARepeat ? 1 : 0,
-        width: 0,
-        height: 0,
-        specialKey: eventKey.specialKey,
-        key: eventKey.key
-    )
+    var out = window_event_t()
+    out.type = UInt64(type)
+    out.data.key.mod_bits = modifierBits(from: event.modifierFlags)
+    out.data.key.key_code = event.keyCode
+    out.data.key.is_repeat = event.isARepeat ? 1 : 0
+    out.data.key.reserved0 = 0
+    out.data.key.special_key = eventKey.specialKey
+    out.data.key.key = eventKey.key
+    return out
+}
+
+private func resizeEventStruct(width: Int32, height: Int32) -> window_event_t {
+    var out = window_event_t()
+    out.type = UInt64(EVENT_TYPE_WINDOW_RESIZE)
+    out.data.resize.width = width
+    out.data.resize.height = height
+    return out
+}
+
+private func simpleEventStruct(type: Int32) -> window_event_t {
+    var out = window_event_t()
+    out.type = UInt64(type)
+    return out
+}
+
+private func pollEventStruct(_ s: WindowState) -> window_event_t? {
+    let pending = s.pollPendingEvent()
+    if pending != EVENT_TYPE_NONE {
+        switch pending {
+        case EVENT_TYPE_WINDOW_RESIZE:
+            return resizeEventStruct(width: s.skiaView.drawableWidth, height: s.skiaView.drawableHeight)
+        case EVENT_TYPE_WINDOW_CLOSE:
+            return simpleEventStruct(type: EVENT_TYPE_WINDOW_CLOSE)
+        case EVENT_TYPE_WINDOW_FRAME_READY:
+            return simpleEventStruct(type: EVENT_TYPE_WINDOW_FRAME_READY)
+        default:
+            return nil
+        }
+    }
+
+    guard let event = NSApp.nextEvent(
+        matching: .any,
+        until: Date.distantPast,
+        inMode: .default,
+        dequeue: true
+    ) else {
+        return nil
+    }
+
+    let out: window_event_t?
+    if event.window !== s.window {
+        out = nil
+    } else {
+        switch event.type {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            out = mouseEventStruct(type: EVENT_TYPE_MOUSE_DOWN, event: event, state: s)
+        case .leftMouseUp, .rightMouseUp, .otherMouseUp:
+            out = mouseEventStruct(type: EVENT_TYPE_MOUSE_UP, event: event, state: s)
+        case .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
+            out = mouseEventStruct(type: EVENT_TYPE_MOUSE_MOVE, event: event, state: s)
+        case .keyDown:
+            out = keyboardEventStruct(type: EVENT_TYPE_KEY_DOWN, event: event)
+        case .keyUp:
+            out = keyboardEventStruct(type: EVENT_TYPE_KEY_UP, event: event)
+        default:
+            out = nil
+        }
+    }
+
+    NSApp.sendEvent(event)
+    return out
 }
 
 @_cdecl("window_create")
@@ -294,95 +313,10 @@ public func windowPump(_ win: UnsafeMutableRawPointer?) {
 @_cdecl("window_poll_event")
 public func windowPollEvent(_ win: UnsafeMutableRawPointer?, _ outEvent: UnsafeMutableRawPointer?) -> Bool {
     guard let win, let outEvent else { return false }
-    let s = stateFrom(win)
-
-    let pending = s.pollPendingEvent()
-    if pending != EVENT_TYPE_NONE {
-        let payload: EventPayload
-        switch pending {
-        case EVENT_TYPE_WINDOW_RESIZE:
-            payload = EventPayload(
-                type: EVENT_TYPE_WINDOW_RESIZE,
-                modBits: 0,
-                x: 0,
-                y: 0,
-                button: 0,
-                keyCode: 0,
-                isRepeat: 0,
-                width: s.skiaView.drawableWidth,
-                height: s.skiaView.drawableHeight,
-                specialKey: KEY_KIND_NONE,
-                key: ""
-            )
-        case EVENT_TYPE_WINDOW_CLOSE:
-            payload = EventPayload(
-                type: EVENT_TYPE_WINDOW_CLOSE,
-                modBits: 0,
-                x: 0,
-                y: 0,
-                button: 0,
-                keyCode: 0,
-                isRepeat: 0,
-                width: 0,
-                height: 0,
-                specialKey: KEY_KIND_NONE,
-                key: ""
-            )
-        case EVENT_TYPE_WINDOW_FRAME_READY:
-            payload = EventPayload(
-                type: EVENT_TYPE_WINDOW_FRAME_READY,
-                modBits: 0,
-                x: 0,
-                y: 0,
-                button: 0,
-                keyCode: 0,
-                isRepeat: 0,
-                width: 0,
-                height: 0,
-                specialKey: KEY_KIND_NONE,
-                key: ""
-            )
-        default:
-            return false
-        }
-        writeEvent(outEvent, payload: payload)
-        return true
+    guard var event = pollEventStruct(stateFrom(win)) else { return false }
+    withUnsafePointer(to: &event) { ptr in
+        outEvent.copyMemory(from: UnsafeRawPointer(ptr), byteCount: MemoryLayout<window_event_t>.size)
     }
-
-    guard let event = NSApp.nextEvent(
-        matching: .any,
-        until: Date.distantPast,
-        inMode: .default,
-        dequeue: true
-    ) else {
-        return false
-    }
-
-    let payload: EventPayload?
-    if event.window !== s.window {
-        payload = nil
-    } else {
-        switch event.type {
-        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
-            payload = mousePayload(type: EVENT_TYPE_MOUSE_DOWN, event: event, state: s)
-        case .leftMouseUp, .rightMouseUp, .otherMouseUp:
-            payload = mousePayload(type: EVENT_TYPE_MOUSE_UP, event: event, state: s)
-        case .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
-            payload = mousePayload(type: EVENT_TYPE_MOUSE_MOVE, event: event, state: s)
-        case .keyDown:
-            payload = keyboardPayload(type: EVENT_TYPE_KEY_DOWN, event: event)
-        case .keyUp:
-            payload = keyboardPayload(type: EVENT_TYPE_KEY_UP, event: event)
-        default:
-            payload = nil
-        }
-    }
-
-    NSApp.sendEvent(event)
-    guard let payload else {
-        return false
-    }
-    writeEvent(outEvent, payload: payload)
     return true
 }
 
