@@ -36,7 +36,6 @@ if [ "$CLEAN"x == "restorex" ]; then
 	if [ -d skia/skia ]; then
 		cd skia/skia
 		git checkout -- .
-		rm include/sk_capi.h src/sk_capi.cpp
 	fi
 	exit 0
 fi
@@ -72,11 +71,6 @@ fi
 # Apply our changes.
 cd skia
 /bin/rm -rf src/c include/c
-cp ../../capi/sk_capi.h include/
-cp ../../capi/sk_capi.cpp src/
-grep -v src/sk_capi.cpp gn/core.gni | sed -e 's@skia_core_sources = \[@&\
-  "$_src/sk_capi.cpp",@' >gn/core.gni.new
-/bin/mv gn/core.gni.new gn/core.gni
 sed -e 's@^class SkData;$@#include "include/core/SkData.h"@' src/pdf/SkPDFSubsetFont.h >src/pdf/SkPDFSubsetFont.h.new
 /bin/mv src/pdf/SkPDFSubsetFont.h.new src/pdf/SkPDFSubsetFont.h
 
@@ -225,9 +219,6 @@ bin/gn gen "${BUILD_DIR}" --args="${COMMON_ARGS} ${PLATFORM_ARGS}"
 ninja -C "${BUILD_DIR}"
 
 # Copy the result into ${DIST}
-mkdir -p "${DIST}/include"
-/bin/rm -f ${DIST}/include/*.h
-cp include/sk_capi.h "${DIST}/include/"
 mkdir -p "${DIST}/lib/${OS_TYPE}"
 cp "${BUILD_DIR}/${LIB_NAME}" "${DIST}/lib/${OS_TYPE}/"
 
@@ -237,7 +228,6 @@ cd ../..
 if [ -d ../unison ]; then
 	RELATIVE_UNISON_DIR=../unison/internal/skia
 	mkdir -p "${RELATIVE_UNISON_DIR}"
-	cp "${DIST}/include/sk_capi.h" "${RELATIVE_UNISON_DIR}/"
 	cp "${DIST}/lib/${OS_TYPE}/${LIB_NAME}" "${RELATIVE_UNISON_DIR}/${UNISON_LIB_NAME}"
 	echo "Copied distribution to unison"
 fi

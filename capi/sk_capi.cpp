@@ -1,4 +1,4 @@
-#include "include/sk_capi.h"
+#include "sk_capi.h"
 
 #include "include/codec/SkBmpDecoder.h"
 #include "include/codec/SkGifDecoder.h"
