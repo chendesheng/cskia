@@ -13,15 +13,14 @@
  */
 
 import {
-  createBackendRenderTarget,
-  createGrContext,
-  GR_SURFACE_ORIGIN_TOP_LEFT,
-  paragraphBuilderAddText,
-  pointerArrayBuffer,
-  SK_COLOR_TYPE_BGRA_8888,
-  skLib,
-  skStringNew,
-} from "./capi/binding.ts";
+  FontCollection,
+  FontMgr,
+  GrDirectContext,
+  ParagraphBuilder,
+  ParagraphStyle,
+  Surface,
+  TextStyle,
+} from "./capi/mod.ts";
 
 import { Application, Window } from "./window/Window.ts";
 
@@ -33,51 +32,6 @@ function log(msg: string): void {
   if (eventLogs.length > 8) {
     eventLogs.shift();
   }
-}
-
-function onRender(
-  canvasPtr: Deno.PointerValue,
-  width: number,
-  height: number,
-  scale: number,
-): void {
-  const sk = skLib.symbols;
-
-  sk.sk_canvas_clear(canvasPtr, 0xff1e1e2e);
-
-  const fontCollection = sk.sk_font_collection_new();
-  const fontMgr = sk.sk_fontmgr_ref_default();
-  sk.sk_font_collection_set_default_font_manager(fontCollection, fontMgr);
-
-  const textStyle = sk.sk_text_style_create();
-  sk.sk_text_style_set_color(textStyle, 0xffcdd6f4);
-  sk.sk_text_style_set_font_size(textStyle, 24.0 * scale);
-
-  const familyNamePtr = skStringNew("Helvetica Neue");
-  const familiesArray = pointerArrayBuffer([familyNamePtr]);
-  sk.sk_text_style_set_font_families(textStyle, familiesArray, 1n);
-
-  const paraStyle = sk.sk_paragraph_style_new();
-  sk.sk_paragraph_style_set_text_style(paraStyle, textStyle);
-
-  const builder = sk.sk_paragraph_builder_new(paraStyle, fontCollection);
-  sk.sk_paragraph_builder_push_style(builder, textStyle);
-
-  const text = eventLogs.length > 0 ? eventLogs.join("\n") : "(no events yet)";
-  paragraphBuilderAddText(builder, text);
-
-  const paragraph = sk.sk_paragraph_builder_build(builder);
-
-  sk.sk_paragraph_layout(paragraph, width);
-  const paraHeight = sk.sk_paragraph_get_height(paragraph);
-  const y = (height - paraHeight) * 0.5;
-
-  sk.sk_paragraph_paint(paragraph, canvasPtr, 24.0 * scale, y);
-
-  sk.sk_paragraph_builder_delete(builder);
-  sk.sk_paragraph_style_delete(paraStyle);
-  sk.sk_string_delete(familyNamePtr);
-  sk.sk_font_collection_unref(fontCollection);
 }
 
 function formatMods(m: {
@@ -94,7 +48,11 @@ function formatMods(m: {
 // ---------------------------------------------------------------------------
 
 const app = Application.shared;
-const grContext = createGrContext(app.metalDevice, app.metalQueue);
+const grCtx = GrDirectContext.MakeMetal(app.metalDevice, app.metalQueue);
+
+const fontMgr = FontMgr.RefDefault();
+const fontCollection = FontCollection.Make();
+fontCollection.setDefaultFontManager(fontMgr);
 
 const win = new Window(800, 500, "Skia Metal Demo");
 win.show();
@@ -148,22 +106,39 @@ win.addEventListener("resize", (e) => {
 
 win.addEventListener("render", (e) => {
   const { texture, width, height, scale } = e.detail;
-  const target = createBackendRenderTarget(width, height, texture);
-  const surface = skLib.symbols.sk_surface_new_backend_render_target(
-    grContext,
-    target,
-    GR_SURFACE_ORIGIN_TOP_LEFT,
-    SK_COLOR_TYPE_BGRA_8888,
-    null,
-    null,
+  const surface = Surface.MakeFromBackendRenderTarget(
+    grCtx,
+    width,
+    height,
+    texture,
   );
-  if (surface) {
-    const canvas = skLib.symbols.sk_surface_get_canvas(surface);
-    onRender(canvas, width, height, scale);
-    skLib.symbols.gr_direct_context_flush_and_submit(grContext, false);
-    skLib.symbols.sk_surface_unref(surface);
-  }
-  skLib.symbols.gr_backendrendertarget_delete(target);
+  if (!surface) return;
+
+  const canvas = surface.getCanvas();
+  canvas.clear(0xff1e1e2e);
+
+  const ts = new TextStyle({
+    color: 0xffcdd6f4,
+    fontSize: 24.0 * scale,
+    fontFamilies: ["Helvetica Neue"],
+  });
+  const ps = new ParagraphStyle({ textStyle: ts });
+  const builder = ParagraphBuilder.Make(ps, fontCollection);
+  builder.pushStyle(ts);
+
+  const text = eventLogs.length > 0 ? eventLogs.join("\n") : "(no events yet)";
+  builder.addText(text);
+
+  const para = builder.build();
+  para.layout(width);
+  canvas.drawParagraph(para, 24.0 * scale, (height - para.getHeight()) * 0.5);
+
+  grCtx.flush();
+
+  builder.delete();
+  ps.delete();
+  ts.delete();
+  surface.delete();
 });
 
 // ---------------------------------------------------------------------------
@@ -172,8 +147,7 @@ win.addEventListener("render", (e) => {
 
 app.run();
 
-skLib.symbols.gr_direct_context_release_resources_and_abandon_context(
-  grContext,
-);
-skLib.symbols.gr_direct_context_delete(grContext);
+fontCollection.delete();
+grCtx.releaseResourcesAndAbandonContext();
+grCtx.delete();
 win.destroy();

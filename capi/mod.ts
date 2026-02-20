@@ -1,0 +1,11 @@
+export { Canvas } from "./Canvas.ts";
+export { FontCollection } from "./FontCollection.ts";
+export { FontMgr } from "./FontMgr.ts";
+export { GrDirectContext } from "./GrDirectContext.ts";
+export { Paragraph } from "./Paragraph.ts";
+export { ParagraphBuilder } from "./ParagraphBuilder.ts";
+export { ParagraphStyle } from "./ParagraphStyle.ts";
+export type { ParagraphStyleOptions } from "./ParagraphStyle.ts";
+export { Surface } from "./Surface.ts";
+export { TextStyle } from "./TextStyle.ts";
+export type { TextStyleOptions } from "./TextStyle.ts";
