@@ -20,7 +20,7 @@ export const lib = Deno.dlopen(libPath, {
 
   /** Create a window. Returns an opaque window_t* handle. */
   window_create: {
-    parameters: ["i32", "i32", "buffer"],
+    parameters: ["i32", "i32", "buffer", "usize"],
     result: "pointer",
     nonblocking: false,
   },
@@ -77,7 +77,7 @@ export const lib = Deno.dlopen(libPath, {
   // --- Window property setters ---
 
   window_set_title: {
-    parameters: ["pointer", "buffer"],
+    parameters: ["pointer", "buffer", "usize"],
     result: "void",
     nonblocking: false,
   },
@@ -120,10 +120,10 @@ export const lib = Deno.dlopen(libPath, {
 
   // --- Window property getters ---
 
-  /** Writes null-terminated UTF-8 title into caller-supplied buffer of bufLen bytes. */
+  /** Copies UTF-8 title bytes into caller buffer and returns total UTF-8 byte length. */
   window_get_title: {
-    parameters: ["pointer", "buffer", "i32"],
-    result: "void",
+    parameters: ["pointer", "buffer", "usize"],
+    result: "usize",
     nonblocking: false,
   },
 
@@ -353,6 +353,8 @@ const KEY_VALUE_MAX_BYTES = 64;
 
 const eventBuffer = new Uint8Array(new ArrayBuffer(WINDOW_EVENT_SIZE));
 const eventView = new DataView(eventBuffer.buffer);
+const utf8Encoder = new TextEncoder();
+const utf8Decoder = new TextDecoder();
 
 export type Modifiers = {
   ctrlKey: boolean;
@@ -393,13 +395,13 @@ function decodeModifiers(modBits: number): Modifiers {
   };
 }
 
-function decodeCString(offset: number, maxBytes: number): string {
+function decodeNullTerminatedUtf8(offset: number, maxBytes: number): string {
   const bytes = new Uint8Array(eventBuffer.buffer, offset, maxBytes);
   let end = 0;
   while (end < bytes.length && bytes[end] !== 0) {
     end++;
   }
-  return new TextDecoder().decode(bytes.subarray(0, end));
+  return utf8Decoder.decode(bytes.subarray(0, end));
 }
 
 export function pollEvent(win: Deno.PointerValue): Event | null {
@@ -452,7 +454,7 @@ export function pollEvent(win: Deno.PointerValue): Event | null {
         type: "keyDown",
         mods,
         keyCode: eventView.getUint16(OFF_KEY_CODE, true),
-        key: decodeCString(OFF_KEY, KEY_VALUE_MAX_BYTES),
+        key: decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES),
         isRepeat: eventView.getUint8(OFF_IS_REPEAT) !== 0,
       };
     case EVENT_TYPE_KEY_UP:
@@ -460,7 +462,7 @@ export function pollEvent(win: Deno.PointerValue): Event | null {
         type: "keyUp",
         mods,
         keyCode: eventView.getUint16(OFF_KEY_CODE, true),
-        key: decodeCString(OFF_KEY, KEY_VALUE_MAX_BYTES),
+        key: decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES),
         isRepeat: eventView.getUint8(OFF_IS_REPEAT) !== 0,
       };
     default:
@@ -472,13 +474,84 @@ export function pollEvent(win: Deno.PointerValue): Event | null {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Encode a JS string as a null-terminated UTF-8 Uint8Array backed by a plain ArrayBuffer. */
-export function toCString(s: string): Uint8Array<ArrayBuffer> {
-  const encoded = new TextEncoder().encode(s);
-  const buf = new Uint8Array(new ArrayBuffer(encoded.length + 1));
-  buf.set(encoded);
-  // last byte is already 0 from ArrayBuffer zero-initialisation
-  return buf;
+function asFfiBuffer(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  if (bytes.buffer instanceof ArrayBuffer) {
+    return new Uint8Array(
+      bytes.buffer,
+      bytes.byteOffset,
+      bytes.byteLength,
+    ) as Uint8Array<ArrayBuffer>;
+  }
+  const out = new Uint8Array(new ArrayBuffer(bytes.byteLength));
+  out.set(bytes);
+  return out;
+}
+
+/** Encode a JS string as UTF-8 bytes in a plain ArrayBuffer for FFI buffer params. */
+function encodeUtf8(s: string): Uint8Array<ArrayBuffer> {
+  const encoded = utf8Encoder.encode(s);
+  return asFfiBuffer(encoded);
+}
+
+/** Decode UTF-8 bytes. */
+export function decodeUtf8(bytes: Uint8Array): string {
+  return utf8Decoder.decode(bytes);
+}
+
+/** Read a window title using the length-based UTF-8 getter. */
+export function getWindowTitle(win: Deno.PointerValue): string {
+  const initial = new Uint8Array(256);
+  const totalLen = Number(lib.symbols.window_get_title(win, initial, 256n));
+  if (totalLen <= initial.length) {
+    return decodeUtf8(initial.subarray(0, totalLen));
+  }
+  const exact = new Uint8Array(totalLen);
+  lib.symbols.window_get_title(win, exact, BigInt(exact.length));
+  return decodeUtf8(exact);
+}
+
+/** String-friendly wrapper around window_create. */
+export function createWindow(
+  width: number,
+  height: number,
+  title: string,
+): Deno.PointerValue {
+  const titleBytes = encodeUtf8(title);
+  return lib.symbols.window_create(
+    width,
+    height,
+    titleBytes,
+    BigInt(titleBytes.length),
+  );
+}
+
+/** String-friendly wrapper around window_set_title. */
+export function setWindowTitle(win: Deno.PointerValue, title: string): void {
+  const titleBytes = encodeUtf8(title);
+  lib.symbols.window_set_title(win, titleBytes, BigInt(titleBytes.length));
+}
+
+/** Build an sk_string_t from a JS string. Caller must delete it with sk_string_delete. */
+export function skStringNew(s: string): Deno.PointerValue {
+  const bytes = encodeUtf8(s);
+  return lib.symbols.sk_string_new(bytes, BigInt(bytes.length));
+}
+
+/** Add a JS string to paragraph builder text. */
+export function paragraphBuilderAddText(
+  builder: Deno.PointerValue,
+  text: string,
+): void {
+  paragraphBuilderAddUtf8(builder, encodeUtf8(text));
+}
+
+/** Add UTF-8 bytes to paragraph builder text without string conversion. */
+export function paragraphBuilderAddUtf8(
+  builder: Deno.PointerValue,
+  utf8: Uint8Array,
+): void {
+  const bytes = asFfiBuffer(utf8);
+  lib.symbols.sk_paragraph_builder_add_text(builder, bytes, BigInt(bytes.length));
 }
 
 /**

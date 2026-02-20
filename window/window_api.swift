@@ -154,6 +154,12 @@ private func keyboardEventKey(_ event: NSEvent) -> String {
     return "Unidentified"
 }
 
+private func decodeUtf8(_ bytes: UnsafePointer<UInt8>?, _ length: Int) -> String? {
+    guard let bytes, length >= 0 else { return nil }
+    let buffer = UnsafeBufferPointer(start: bytes, count: length)
+    return String(decoding: buffer, as: UTF8.self)
+}
+
 private func mousePayload(type: Int32, event: NSEvent, state: WindowState) -> EventPayload {
     let p = state.skiaView.convert(event.locationInWindow, from: nil)
     let flippedY = state.skiaView.bounds.height - p.y
@@ -190,9 +196,10 @@ private func keyboardPayload(type: Int32, event: NSEvent) -> EventPayload {
 public func windowCreate(
     _ width:  Int32,
     _ height: Int32,
-    _ title:  UnsafePointer<CChar>?
+    _ title: UnsafePointer<UInt8>?,
+    _ titleLen: Int
 ) -> UnsafeMutableRawPointer {
-    let titleStr = title.map { String(cString: $0) } ?? "Untitled"
+    let titleStr = decodeUtf8(title, titleLen) ?? "Untitled"
 
     let app = NSApplication.shared
     app.setActivationPolicy(.regular)
@@ -364,9 +371,9 @@ public func windowDestroy(_ win: UnsafeMutableRawPointer?) {
 // MARK: - Setters
 
 @_cdecl("window_set_title")
-public func windowSetTitle(_ win: UnsafeMutableRawPointer?, _ title: UnsafePointer<CChar>?) {
-    guard let win, let title else { return }
-    stateFrom(win).window.title = String(cString: title)
+public func windowSetTitle(_ win: UnsafeMutableRawPointer?, _ title: UnsafePointer<UInt8>?, _ titleLen: Int) {
+    guard let win, let titleStr = decodeUtf8(title, titleLen) else { return }
+    stateFrom(win).window.title = titleStr
 }
 
 @_cdecl("window_set_width")
@@ -419,11 +426,16 @@ public func windowSetResizable(_ win: UnsafeMutableRawPointer?, _ resizable: Boo
 // MARK: - Getters
 
 @_cdecl("window_get_title")
-public func windowGetTitle(_ win: UnsafeMutableRawPointer?, _ buf: UnsafeMutablePointer<CChar>?, _ bufLen: Int32) {
-    guard let win, let buf else { return }
-    _ = stateFrom(win).window.title.withCString { ptr in
-        strncpy(buf, ptr, Int(bufLen))
+public func windowGetTitle(_ win: UnsafeMutableRawPointer?, _ buf: UnsafeMutablePointer<UInt8>?, _ bufLen: Int) -> Int {
+    guard let win else { return 0 }
+    let bytes = Array(stateFrom(win).window.title.utf8)
+    guard let buf, bufLen > 0 else { return bytes.count }
+
+    let toCopy = min(bytes.count, bufLen)
+    for i in 0..<toCopy {
+        buf[i] = bytes[i]
     }
+    return bytes.count
 }
 
 @_cdecl("window_get_width")

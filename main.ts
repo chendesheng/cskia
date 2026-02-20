@@ -13,11 +13,13 @@
  */
 
 import {
+  createWindow,
   type Event,
   lib,
+  paragraphBuilderAddText,
   pollEvent,
   pointerArrayBuffer,
-  toCString,
+  skStringNew,
 } from "./binding.ts";
 
 const eventLogs: string[] = [];
@@ -43,11 +45,7 @@ function onRender(
   symbols.sk_text_style_set_color(textStyle, 0xffcdd6f4); // Catppuccin text
   symbols.sk_text_style_set_font_size(textStyle, 24.0 * scale);
 
-  const familyNameStr = toCString("Helvetica Neue");
-  const familyNamePtr = symbols.sk_string_new(
-    familyNameStr,
-    BigInt(familyNameStr.length - 1),
-  );
+  const familyNamePtr = skStringNew("Helvetica Neue");
   const familiesArray = pointerArrayBuffer([familyNamePtr]);
   symbols.sk_text_style_set_font_families(textStyle, familiesArray, 1n);
 
@@ -60,12 +58,7 @@ function onRender(
   symbols.sk_paragraph_builder_push_style(builder, textStyle);
 
   const text = eventLogs.length > 0 ? eventLogs.join("\n") : "(no events yet)";
-  const textBytes = toCString(text);
-  symbols.sk_paragraph_builder_add_text(
-    builder,
-    textBytes,
-    BigInt(textBytes.length - 1),
-  );
+  paragraphBuilderAddText(builder, text);
 
   const paragraph = symbols.sk_paragraph_builder_build(builder);
 
@@ -105,8 +98,7 @@ function formatEvent(event: Event): string {
   }
 }
 
-const titleBuf = toCString("Skia Metal Demo");
-const win = lib.symbols.window_create(800, 500, titleBuf);
+const win = createWindow(800, 500, "Skia Metal Demo");
 
 lib.symbols.window_show(win);
 
