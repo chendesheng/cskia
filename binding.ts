@@ -338,7 +338,7 @@ const MOD_SHIFT = 1 << 1;
 const MOD_ALT = 1 << 2;
 const MOD_META = 1 << 3;
 
-const WINDOW_EVENT_SIZE = 104;
+const WINDOW_EVENT_SIZE = 108;
 const OFF_TYPE = 0;
 const OFF_MOD_BITS = 4;
 const OFF_X = 8;
@@ -348,7 +348,8 @@ const OFF_KEY_CODE = 28;
 const OFF_IS_REPEAT = 30;
 const OFF_WIDTH = 32;
 const OFF_HEIGHT = 36;
-const OFF_KEY = 40;
+const OFF_SPECIAL_KEY = 40;
+const OFF_KEY = 44;
 const KEY_VALUE_MAX_BYTES = 64;
 
 const eventBuffer = new Uint8Array(new ArrayBuffer(WINDOW_EVENT_SIZE));
@@ -373,6 +374,42 @@ export type EventType =
   | "keyDown"
   | "keyUp";
 
+export enum SpecialKey {
+  Text = 1,
+  Dead = 2,
+  Unidentified = 3,
+  Enter = 10,
+  Tab = 11,
+  Backspace = 12,
+  Escape = 13,
+  CapsLock = 14,
+  Shift = 15,
+  Control = 16,
+  Alt = 17,
+  Meta = 18,
+  ArrowLeft = 19,
+  ArrowRight = 20,
+  ArrowUp = 21,
+  ArrowDown = 22,
+  Home = 23,
+  End = 24,
+  PageUp = 25,
+  PageDown = 26,
+  Delete = 27,
+  F1 = 28,
+  F2 = 29,
+  F3 = 30,
+  F4 = 31,
+  F5 = 32,
+  F6 = 33,
+  F7 = 34,
+  F8 = 35,
+  F9 = 36,
+  F10 = 37,
+  F11 = 38,
+  F12 = 39,
+}
+
 export type Event = {
   type: EventType;
   mods: Modifiers;
@@ -380,6 +417,7 @@ export type Event = {
   y?: number;
   button?: number;
   keyCode?: number;
+  specialKey?: SpecialKey;
   key?: string;
   isRepeat?: boolean;
   width?: number;
@@ -402,6 +440,79 @@ function decodeNullTerminatedUtf8(offset: number, maxBytes: number): string {
     end++;
   }
   return utf8Decoder.decode(bytes.subarray(0, end));
+}
+
+function keyFromSpecialKey(specialKey: SpecialKey, textKey: string): string {
+  switch (specialKey) {
+    case SpecialKey.Text:
+      return textKey.length > 0 ? textKey : "Unidentified";
+    case SpecialKey.Dead:
+      return "Dead";
+    case SpecialKey.Unidentified:
+      return "Unidentified";
+    case SpecialKey.Enter:
+      return "Enter";
+    case SpecialKey.Tab:
+      return "Tab";
+    case SpecialKey.Backspace:
+      return "Backspace";
+    case SpecialKey.Escape:
+      return "Escape";
+    case SpecialKey.CapsLock:
+      return "CapsLock";
+    case SpecialKey.Shift:
+      return "Shift";
+    case SpecialKey.Control:
+      return "Control";
+    case SpecialKey.Alt:
+      return "Alt";
+    case SpecialKey.Meta:
+      return "Meta";
+    case SpecialKey.ArrowLeft:
+      return "ArrowLeft";
+    case SpecialKey.ArrowRight:
+      return "ArrowRight";
+    case SpecialKey.ArrowUp:
+      return "ArrowUp";
+    case SpecialKey.ArrowDown:
+      return "ArrowDown";
+    case SpecialKey.Home:
+      return "Home";
+    case SpecialKey.End:
+      return "End";
+    case SpecialKey.PageUp:
+      return "PageUp";
+    case SpecialKey.PageDown:
+      return "PageDown";
+    case SpecialKey.Delete:
+      return "Delete";
+    case SpecialKey.F1:
+      return "F1";
+    case SpecialKey.F2:
+      return "F2";
+    case SpecialKey.F3:
+      return "F3";
+    case SpecialKey.F4:
+      return "F4";
+    case SpecialKey.F5:
+      return "F5";
+    case SpecialKey.F6:
+      return "F6";
+    case SpecialKey.F7:
+      return "F7";
+    case SpecialKey.F8:
+      return "F8";
+    case SpecialKey.F9:
+      return "F9";
+    case SpecialKey.F10:
+      return "F10";
+    case SpecialKey.F11:
+      return "F11";
+    case SpecialKey.F12:
+      return "F12";
+    default:
+      return "Unidentified";
+  }
 }
 
 export function pollEvent(win: Deno.PointerValue): Event | null {
@@ -449,22 +560,36 @@ export function pollEvent(win: Deno.PointerValue): Event | null {
         y: eventView.getFloat64(OFF_Y, true),
         button: eventView.getInt32(OFF_BUTTON, true),
       };
-    case EVENT_TYPE_KEY_DOWN:
+    case EVENT_TYPE_KEY_DOWN: {
+      const specialKey = eventView.getInt32(
+        OFF_SPECIAL_KEY,
+        true,
+      ) as SpecialKey;
+      const textKey = decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES);
       return {
         type: "keyDown",
         mods,
         keyCode: eventView.getUint16(OFF_KEY_CODE, true),
-        key: decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES),
+        specialKey,
+        key: keyFromSpecialKey(specialKey, textKey),
         isRepeat: eventView.getUint8(OFF_IS_REPEAT) !== 0,
       };
-    case EVENT_TYPE_KEY_UP:
+    }
+    case EVENT_TYPE_KEY_UP: {
+      const specialKey = eventView.getInt32(
+        OFF_SPECIAL_KEY,
+        true,
+      ) as SpecialKey;
+      const textKey = decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES);
       return {
         type: "keyUp",
         mods,
         keyCode: eventView.getUint16(OFF_KEY_CODE, true),
-        key: decodeNullTerminatedUtf8(OFF_KEY, KEY_VALUE_MAX_BYTES),
+        specialKey,
+        key: keyFromSpecialKey(specialKey, textKey),
         isRepeat: eventView.getUint8(OFF_IS_REPEAT) !== 0,
       };
+    }
     default:
       return null;
   }
@@ -551,7 +676,11 @@ export function paragraphBuilderAddUtf8(
   utf8: Uint8Array,
 ): void {
   const bytes = asFfiBuffer(utf8);
-  lib.symbols.sk_paragraph_builder_add_text(builder, bytes, BigInt(bytes.length));
+  lib.symbols.sk_paragraph_builder_add_text(
+    builder,
+    bytes,
+    BigInt(bytes.length),
+  );
 }
 
 /**
