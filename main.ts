@@ -12,15 +12,14 @@
  *   deno run --allow-ffi --allow-read --unstable-ffi main.ts
  */
 
-import {
-  FontCollection,
-  FontMgr,
-  GrDirectContext,
-  ParagraphBuilder,
-  ParagraphStyle,
-  Surface,
-  TextStyle,
-} from "./capi/mod.ts";
+import { Black, White } from "./capi/Color.ts";
+import { FontCollection } from "./capi/FontCollection.ts";
+import { FontMgr } from "./capi/FontMgr.ts";
+import { GrDirectContext } from "./capi/GrDirectContext.ts";
+import { ParagraphBuilder } from "./capi/ParagraphBuilder.ts";
+import { ParagraphStyle } from "./capi/ParagraphStyle.ts";
+import { Surface } from "./capi/Surface.ts";
+import { TextStyle } from "./capi/TextStyle.ts";
 
 import { Application, Window } from "./window/Window.ts";
 
@@ -115,10 +114,10 @@ win.addEventListener("render", (e) => {
   if (!surface) return;
 
   const canvas = surface.getCanvas();
-  canvas.clear(0xff1e1e2e);
+  canvas.clear(Black);
 
   const ts = new TextStyle({
-    color: 0xffcdd6f4,
+    color: White,
     fontSize: 24.0 * scale,
     fontFamilies: ["Helvetica Neue"],
   });

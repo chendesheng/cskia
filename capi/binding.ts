@@ -69,6 +69,10 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: ["pointer", "u32"],
     result: "void",
   },
+  sk_canvas_clear_color4f: {
+    parameters: ["pointer", "buffer"],
+    result: "void",
+  },
 
   // --- Font manager ---
 

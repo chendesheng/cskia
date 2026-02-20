@@ -1,9 +1,11 @@
 import { pointerArrayBuffer, skLib, skStringNew } from "./binding.ts";
+import { color4fToColor } from "./Color.ts";
+import type { Color4f } from "./Color.ts";
 
 const sk = skLib.symbols;
 
 export interface TextStyleOptions {
-  color?: number;
+  color?: Color4f;
   fontSize?: number;
   fontFamilies?: string[];
 }
@@ -22,8 +24,8 @@ export class TextStyle {
     return this.#ptr;
   }
 
-  setColor(color: number): void {
-    sk.sk_text_style_set_color(this.#ptr, color);
+  setColor(color: Color4f): void {
+    sk.sk_text_style_set_color(this.#ptr, color4fToColor(color));
   }
 
   setFontSize(size: number): void {

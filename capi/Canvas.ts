@@ -1,4 +1,5 @@
 import { skLib } from "./binding.ts";
+import type { Color4f } from "./Color.ts";
 import type { Paragraph } from "./Paragraph.ts";
 
 const sk = skLib.symbols;
@@ -11,8 +12,8 @@ export class Canvas {
     this.#ptr = ptr;
   }
 
-  clear(color: number): void {
-    sk.sk_canvas_clear(this.#ptr, color);
+  clear(color: Color4f): void {
+    sk.sk_canvas_clear_color4f(this.#ptr, color);
   }
 
   drawParagraph(p: Paragraph, x: number, y: number): void {

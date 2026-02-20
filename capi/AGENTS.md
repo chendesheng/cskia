@@ -1,0 +1,1 @@
+- All public api (expect the one convert the Color to Color4f) should use Color4f

@@ -795,6 +795,11 @@ void sk_canvas_clear(sk_canvas_t *canvas, sk_color_t color) {
   reinterpret_cast<SkCanvas *>(canvas)->clear(color);
 }
 
+void sk_canvas_clear_color4f(sk_canvas_t *canvas, const sk_color4f_t *color) {
+  reinterpret_cast<SkCanvas *>(canvas)->clear(
+      *reinterpret_cast<const SkColor4f *>(color));
+}
+
 void sk_canvas_clip_path_with_operation(sk_canvas_t *canvas,
                                         const sk_path_t *cpath, sk_clip_op_t op,
                                         bool doAA) {
@@ -830,6 +835,12 @@ void sk_canvas_draw_circle(sk_canvas_t *canvas, float cx, float cy, float rad,
 void sk_canvas_draw_color(sk_canvas_t *canvas, sk_color_t color,
                           sk_blend_mode_t cmode) {
   reinterpret_cast<SkCanvas *>(canvas)->drawColor(color, (SkBlendMode)cmode);
+}
+
+void sk_canvas_draw_color4f(sk_canvas_t *canvas, const sk_color4f_t *color,
+                            sk_blend_mode_t cmode) {
+  reinterpret_cast<SkCanvas *>(canvas)->drawColor(
+      *reinterpret_cast<const SkColor4f *>(color), (SkBlendMode)cmode);
 }
 
 void sk_canvas_draw_image_nine(sk_canvas_t *canvas, const sk_image_t *image,
@@ -1064,6 +1075,17 @@ sk_color_filter_t *sk_colorfilter_new_mode(sk_color_t c,
       SkColorFilters::Blend(c, (SkBlendMode)cmode).release());
 }
 
+sk_color_filter_t *sk_colorfilter_new_mode_color4f(const sk_color4f_t *c,
+                                                   sk_color_space_t *colorspace,
+                                                   sk_blend_mode_t cmode) {
+  return reinterpret_cast<sk_color_filter_t *>(
+      SkColorFilters::Blend(
+          *reinterpret_cast<const SkColor4f *>(c),
+          sk_ref_sp(reinterpret_cast<SkColorSpace *>(colorspace)),
+          (SkBlendMode)cmode)
+          .release());
+}
+
 void sk_colorfilter_unref(sk_color_filter_t *filter) {
   SkSafeUnref(reinterpret_cast<SkColorFilter *>(filter));
 }
@@ -1072,6 +1094,28 @@ void sk_colorfilter_unref(sk_color_filter_t *filter) {
 sk_color_space_t *sk_colorspace_new_srgb(void) {
   return reinterpret_cast<sk_color_space_t *>(
       SkColorSpace::MakeSRGB().release());
+}
+
+// ===== Functions from include/core/SkColor.h =====
+sk_color4f_t sk_color4f_from_color(sk_color_t color) {
+  SkColor4f c = SkColor4f::FromColor(color);
+  return reinterpret_cast<const sk_color4f_t &>(c);
+}
+
+sk_color_t sk_color4f_to_color(const sk_color4f_t *color) {
+  return reinterpret_cast<const SkColor4f *>(color)->toSkColor();
+}
+
+void sk_color_to_hsv(sk_color_t color, float hsv[3]) {
+  SkColorToHSV(color, hsv);
+}
+
+void sk_rgb_to_hsv(uint8_t r, uint8_t g, uint8_t b, float hsv[3]) {
+  SkRGBToHSV(r, g, b, hsv);
+}
+
+sk_color_t sk_hsv_to_color(uint8_t alpha, const float hsv[3]) {
+  return SkHSVToColor(alpha, hsv);
 }
 
 // ===== Functions from include/core/SkData.h =====
@@ -1828,6 +1872,18 @@ void sk_paint_set_color(sk_paint_t *cpaint, sk_color_t c) {
   reinterpret_cast<SkPaint *>(cpaint)->setColor(c);
 }
 
+sk_color4f_t sk_paint_get_color4f(const sk_paint_t *cpaint) {
+  SkColor4f c = reinterpret_cast<const SkPaint *>(cpaint)->getColor4f();
+  return reinterpret_cast<const sk_color4f_t &>(c);
+}
+
+void sk_paint_set_color4f(sk_paint_t *cpaint, const sk_color4f_t *color,
+                          sk_color_space_t *colorspace) {
+  reinterpret_cast<SkPaint *>(cpaint)->setColor(
+      *reinterpret_cast<const SkColor4f *>(color),
+      reinterpret_cast<SkColorSpace *>(colorspace));
+}
+
 void sk_paint_set_colorfilter(sk_paint_t *cpaint, sk_color_filter_t *cfilter) {
   reinterpret_cast<SkPaint *>(cpaint)->setColorFilter(
       sk_ref_sp(reinterpret_cast<SkColorFilter *>(cfilter)));
@@ -2287,6 +2343,86 @@ sk_shader_t *sk_shader_new_two_point_conical_gradient(
       SkGradientShader::MakeTwoPointConical(
           *reinterpret_cast<const SkPoint *>(start), startRadius,
           *reinterpret_cast<const SkPoint *>(end), endRadius, colors, colorPos,
+          colorCount, (SkTileMode)tileMode, 0, localMatrix ? &m : nullptr)
+          .release());
+}
+
+sk_shader_t *sk_shader_new_color4f(const sk_color4f_t *color,
+                                   sk_color_space_t *colorspace) {
+  return reinterpret_cast<sk_shader_t *>(
+      SkShaders::Color(*reinterpret_cast<const SkColor4f *>(color),
+                       sk_ref_sp(reinterpret_cast<SkColorSpace *>(colorspace)))
+          .release());
+}
+
+sk_shader_t *sk_shader_new_linear_gradient_color4f(
+    const sk_point_t points[2], const sk_color4f_t colors[],
+    sk_color_space_t *colorspace, const float colorPos[], int colorCount,
+    sk_tile_mode_t tileMode, const sk_matrix_t *localMatrix) {
+  SkMatrix m;
+  if (localMatrix) {
+    m = AsMatrix(localMatrix);
+  }
+  return reinterpret_cast<sk_shader_t *>(
+      SkGradientShader::MakeLinear(
+          reinterpret_cast<const SkPoint *>(points),
+          reinterpret_cast<const SkColor4f *>(colors),
+          sk_ref_sp(reinterpret_cast<SkColorSpace *>(colorspace)), colorPos,
+          colorCount, (SkTileMode)tileMode, 0, localMatrix ? &m : nullptr)
+          .release());
+}
+
+sk_shader_t *sk_shader_new_radial_gradient_color4f(
+    const sk_point_t *center, float radius, const sk_color4f_t colors[],
+    sk_color_space_t *colorspace, const float colorPos[], int colorCount,
+    sk_tile_mode_t tileMode, const sk_matrix_t *localMatrix) {
+  SkMatrix m;
+  if (localMatrix) {
+    m = AsMatrix(localMatrix);
+  }
+  return reinterpret_cast<sk_shader_t *>(
+      SkGradientShader::MakeRadial(
+          *reinterpret_cast<const SkPoint *>(center), (SkScalar)radius,
+          reinterpret_cast<const SkColor4f *>(colors),
+          sk_ref_sp(reinterpret_cast<SkColorSpace *>(colorspace)), colorPos,
+          colorCount, (SkTileMode)tileMode, 0, localMatrix ? &m : nullptr)
+          .release());
+}
+
+sk_shader_t *sk_shader_new_sweep_gradient_color4f(
+    const sk_point_t *center, const sk_color4f_t colors[],
+    sk_color_space_t *colorspace, const float colorPos[], int colorCount,
+    sk_tile_mode_t tileMode, float startAngle, float endAngle,
+    const sk_matrix_t *localMatrix) {
+  SkMatrix m;
+  if (localMatrix) {
+    m = AsMatrix(localMatrix);
+  }
+  return reinterpret_cast<sk_shader_t *>(
+      SkGradientShader::MakeSweep(
+          center->x, center->y,
+          reinterpret_cast<const SkColor4f *>(colors),
+          sk_ref_sp(reinterpret_cast<SkColorSpace *>(colorspace)), colorPos,
+          colorCount, (SkTileMode)tileMode, startAngle, endAngle, 0,
+          localMatrix ? &m : nullptr)
+          .release());
+}
+
+sk_shader_t *sk_shader_new_two_point_conical_gradient_color4f(
+    const sk_point_t *start, float startRadius, const sk_point_t *end,
+    float endRadius, const sk_color4f_t colors[], sk_color_space_t *colorspace,
+    const float colorPos[], int colorCount, sk_tile_mode_t tileMode,
+    const sk_matrix_t *localMatrix) {
+  SkMatrix m;
+  if (localMatrix) {
+    m = AsMatrix(localMatrix);
+  }
+  return reinterpret_cast<sk_shader_t *>(
+      SkGradientShader::MakeTwoPointConical(
+          *reinterpret_cast<const SkPoint *>(start), startRadius,
+          *reinterpret_cast<const SkPoint *>(end), endRadius,
+          reinterpret_cast<const SkColor4f *>(colors),
+          sk_ref_sp(reinterpret_cast<SkColorSpace *>(colorspace)), colorPos,
           colorCount, (SkTileMode)tileMode, 0, localMatrix ? &m : nullptr)
           .release());
 }

@@ -317,6 +317,13 @@ typedef enum {
 
 typedef uint32_t sk_color_t;
 
+typedef struct {
+  float fR;
+  float fG;
+  float fB;
+  float fA;
+} sk_color4f_t;
+
 // ===== Types from include/core/SkColorSpace.h =====
 
 typedef struct sk_color_space_t sk_color_space_t;
@@ -761,6 +768,8 @@ SK_C_API void gr_glinterface_unref(const gr_glinterface_t *intf);
 // ===== Functions from include/core/SkCanvas.h =====
 SK_C_API sk_surface_t *sk_canvas_get_surface(sk_canvas_t *canvas);
 SK_C_API void sk_canvas_clear(sk_canvas_t *canvas, sk_color_t color);
+SK_C_API void sk_canvas_clear_color4f(sk_canvas_t *canvas,
+                                      const sk_color4f_t *color);
 SK_C_API void sk_canvas_clip_path_with_operation(sk_canvas_t *t,
                                                  const sk_path_t *crect,
                                                  sk_clip_op_t op, bool doAA);
@@ -775,6 +784,9 @@ SK_C_API void sk_canvas_draw_circle(sk_canvas_t *canvas, float cx, float cy,
                                     float rad, const sk_paint_t *cpaint);
 SK_C_API void sk_canvas_draw_color(sk_canvas_t *canvas, sk_color_t color,
                                    sk_blend_mode_t mode);
+SK_C_API void sk_canvas_draw_color4f(sk_canvas_t *canvas,
+                                     const sk_color4f_t *color,
+                                     sk_blend_mode_t mode);
 SK_C_API void sk_canvas_draw_image_nine(sk_canvas_t *t, const sk_image_t *image,
                                         const sk_irect_t *center,
                                         const sk_rect_t *dst,
@@ -854,10 +866,21 @@ SK_C_API sk_color_filter_t *sk_colorfilter_new_lighting(sk_color_t mul,
 SK_C_API sk_color_filter_t *sk_colorfilter_new_luma_color(void);
 SK_C_API sk_color_filter_t *sk_colorfilter_new_mode(sk_color_t c,
                                                     sk_blend_mode_t mode);
+SK_C_API sk_color_filter_t *
+sk_colorfilter_new_mode_color4f(const sk_color4f_t *c,
+                                sk_color_space_t *colorspace,
+                                sk_blend_mode_t mode);
 SK_C_API void sk_colorfilter_unref(sk_color_filter_t *filter);
 
 // ===== Functions from include/core/SkColorSpace.h =====
 SK_C_API sk_color_space_t *sk_colorspace_new_srgb(void);
+
+// ===== Functions from include/core/SkColor.h =====
+SK_C_API sk_color4f_t sk_color4f_from_color(sk_color_t color);
+SK_C_API sk_color_t sk_color4f_to_color(const sk_color4f_t *color);
+SK_C_API void sk_color_to_hsv(sk_color_t color, float hsv[3]);
+SK_C_API void sk_rgb_to_hsv(uint8_t r, uint8_t g, uint8_t b, float hsv[3]);
+SK_C_API sk_color_t sk_hsv_to_color(uint8_t alpha, const float hsv[3]);
 
 // ===== Functions from include/core/SkData.h =====
 SK_C_API const void *sk_data_get_data(const sk_data_t *data);
@@ -1090,6 +1113,10 @@ SK_C_API void sk_paint_reset(sk_paint_t *cpaint);
 SK_C_API void sk_paint_set_antialias(sk_paint_t *cpaint, bool aa);
 SK_C_API void sk_paint_set_blend_mode(sk_paint_t *paint, sk_blend_mode_t mode);
 SK_C_API void sk_paint_set_color(sk_paint_t *cpaint, sk_color_t c);
+SK_C_API sk_color4f_t sk_paint_get_color4f(const sk_paint_t *cpaint);
+SK_C_API void sk_paint_set_color4f(sk_paint_t *cpaint,
+                                   const sk_color4f_t *color,
+                                   sk_color_space_t *colorspace);
 SK_C_API void sk_paint_set_colorfilter(sk_paint_t *cpaint,
                                        sk_color_filter_t *cfilter);
 SK_C_API void sk_paint_set_dither(sk_paint_t *cpaint, bool isdither);
@@ -1242,6 +1269,26 @@ SK_C_API sk_shader_t *sk_shader_new_two_point_conical_gradient(
     const sk_point_t *start, float startRadius, const sk_point_t *end,
     float endRadius, const sk_color_t colors[], const float colorPos[],
     int colorCount, sk_tile_mode_t tileMode, const sk_matrix_t *localMatrix);
+SK_C_API sk_shader_t *sk_shader_new_color4f(const sk_color4f_t *color,
+                                            sk_color_space_t *colorspace);
+SK_C_API sk_shader_t *sk_shader_new_linear_gradient_color4f(
+    const sk_point_t points[2], const sk_color4f_t colors[],
+    sk_color_space_t *colorspace, const float colorPos[], int colorCount,
+    sk_tile_mode_t tileMode, const sk_matrix_t *localMatrix);
+SK_C_API sk_shader_t *sk_shader_new_radial_gradient_color4f(
+    const sk_point_t *center, float radius, const sk_color4f_t colors[],
+    sk_color_space_t *colorspace, const float colorPos[], int colorCount,
+    sk_tile_mode_t tileMode, const sk_matrix_t *localMatrix);
+SK_C_API sk_shader_t *sk_shader_new_sweep_gradient_color4f(
+    const sk_point_t *center, const sk_color4f_t colors[],
+    sk_color_space_t *colorspace, const float colorPos[], int colorCount,
+    sk_tile_mode_t tileMode, float startAngle, float endAngle,
+    const sk_matrix_t *localMatrix);
+SK_C_API sk_shader_t *sk_shader_new_two_point_conical_gradient_color4f(
+    const sk_point_t *start, float startRadius, const sk_point_t *end,
+    float endRadius, const sk_color4f_t colors[], sk_color_space_t *colorspace,
+    const float colorPos[], int colorCount, sk_tile_mode_t tileMode,
+    const sk_matrix_t *localMatrix);
 SK_C_API void sk_shader_unref(sk_shader_t *shader);
 SK_C_API sk_shader_t *
 sk_shader_with_color_filter(const sk_shader_t *shader,
