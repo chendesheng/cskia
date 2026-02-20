@@ -1,8 +1,0 @@
-/*
- * Exposes the Skia C API header as a Clang module so Swift can import it.
- * Path is relative to this file (window/module.modulemap → ../capi/sk_capi.h).
- */
-module CSkia {
-    header "../capi/sk_capi.h"
-    export *
-}

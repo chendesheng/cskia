@@ -1,0 +1,4 @@
+module CSkia {
+    header "sk_capi.h"
+    export *
+}

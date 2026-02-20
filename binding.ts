@@ -8,8 +8,8 @@
 
 import { join, dirname, fromFileUrl } from "jsr:@std/path";
 
-const libDir = join(dirname(fromFileUrl(import.meta.url)), "build");
-const libPath = join(libDir, "libskiawindow.dylib");
+const libDir = join(dirname(fromFileUrl(import.meta.url)), ".build", "release");
+const libPath = join(libDir, "libSkiaWindow.dylib");
 
 // ---------------------------------------------------------------------------
 // FFI symbol definitions

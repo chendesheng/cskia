@@ -6,7 +6,7 @@
  * paragraph API each frame.
  *
  * Build the dylib first:
- *   bash build_lib.sh
+ *   swift build -c release
  *
  * Run:
  *   deno run --allow-ffi --allow-read --unstable-ffi main.ts
