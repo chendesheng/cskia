@@ -77,7 +77,7 @@ export class Font {
     const utf8 = encodeUtf8(text);
     const maxGlyphs = text.length * 2;
     const glyphs = new Uint16Array(maxGlyphs);
-    const glyphBuf = asFfiBuffer(new Uint8Array(glyphs.buffer, glyphs.byteOffset, glyphs.byteLength));
+    const glyphBuf = asFfiBuffer(glyphs);
     const count = sk.sk_font_text_to_glyphs(
       this.#ptr, utf8, BigInt(utf8.length), 0 /* UTF8 */, glyphBuf, maxGlyphs,
     ) as number;
@@ -87,8 +87,8 @@ export class Font {
   getGlyphWidths(glyphs: Uint16Array): Float32Array {
     const count = glyphs.length;
     const widths = new Float32Array(count);
-    const glyphBuf = asFfiBuffer(new Uint8Array(glyphs.buffer, glyphs.byteOffset, glyphs.byteLength));
-    const widthBuf = asFfiBuffer(new Uint8Array(widths.buffer, widths.byteOffset, widths.byteLength));
+    const glyphBuf = asFfiBuffer(glyphs);
+    const widthBuf = asFfiBuffer(widths);
     sk.sk_font_glyph_widths(this.#ptr, glyphBuf, count, widthBuf, null!);
     return widths;
   }

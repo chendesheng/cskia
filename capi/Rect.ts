@@ -1,5 +1,3 @@
-import { toF32Bytes } from "./binding.ts";
-
 /**
  * Rect as Float32Array: [left, top, right, bottom].
  * Matches sk_rect_t memory layout.
@@ -73,8 +71,4 @@ export function rrectIsUniform(rrect: RRect): boolean {
     rrect[8] === rx && rrect[9] === ry &&
     rrect[10] === rx && rrect[11] === ry
   );
-}
-
-export function rectToBytes(rect: Rect): Uint8Array<ArrayBuffer> {
-  return toF32Bytes(rect);
 }

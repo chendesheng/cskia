@@ -434,14 +434,15 @@ export function windowRun(win: Deno.PointerValue): void {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function asFfiBuffer(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
-  if (bytes.buffer instanceof ArrayBuffer) {
+function asFfiBuffer(view: ArrayBufferView): Uint8Array<ArrayBuffer> {
+  if (view.buffer instanceof ArrayBuffer) {
     return new Uint8Array(
-      bytes.buffer,
-      bytes.byteOffset,
-      bytes.byteLength,
+      view.buffer,
+      view.byteOffset,
+      view.byteLength,
     ) as Uint8Array<ArrayBuffer>;
   }
+  const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
   const out = new Uint8Array(new ArrayBuffer(bytes.byteLength));
   out.set(bytes);
   return out;

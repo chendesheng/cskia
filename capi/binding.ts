@@ -559,14 +559,15 @@ export const skLib = Deno.dlopen(libPath, {
 // Helpers
 // ---------------------------------------------------------------------------
 
-export function asFfiBuffer(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
-  if (bytes.buffer instanceof ArrayBuffer) {
+export function asFfiBuffer(view: ArrayBufferView): Uint8Array<ArrayBuffer> {
+  if (view.buffer instanceof ArrayBuffer) {
     return new Uint8Array(
-      bytes.buffer,
-      bytes.byteOffset,
-      bytes.byteLength,
+      view.buffer,
+      view.byteOffset,
+      view.byteLength,
     ) as Uint8Array<ArrayBuffer>;
   }
+  const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
   const out = new Uint8Array(new ArrayBuffer(bytes.byteLength));
   out.set(bytes);
   return out;
@@ -574,7 +575,7 @@ export function asFfiBuffer(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
 
 export function toF32Bytes(arr: Float32Array | number[]): Uint8Array<ArrayBuffer> {
   const f32 = arr instanceof Float32Array ? arr : new Float32Array(arr);
-  return asFfiBuffer(new Uint8Array(f32.buffer, f32.byteOffset, f32.byteLength));
+  return asFfiBuffer(f32);
 }
 
 export function encodeUtf8(s: string): Uint8Array<ArrayBuffer> {
