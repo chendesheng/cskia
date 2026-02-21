@@ -1,4 +1,4 @@
-name: CSkiaTests
+name: SkiaWindowTests
 options:
   deploymentTarget:
     macOS: "14.0"
@@ -20,7 +20,7 @@ targets:
     settings:
       base:
         CODE_SIGN_IDENTITY: "-"
-        PRODUCT_BUNDLE_IDENTIFIER: com.cskia.testapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.skiawindow.testapp
         PRODUCT_NAME: TestApp
 
   TestAppUITests:
@@ -37,7 +37,7 @@ targets:
         GENERATE_INFOPLIST_FILE: "YES"
         ENABLE_APP_SANDBOX: "NO"
         TEST_TARGET_NAME: TestApp
-        PRODUCT_BUNDLE_IDENTIFIER: com.cskia.testapp.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.skiawindow.testapp.uitests
 
 schemes:
   TestAppUITests:

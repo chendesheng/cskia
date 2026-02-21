@@ -12,7 +12,7 @@ func nonSourceFiles(in dir: String, sourceExtensions: Set<String>) -> [String] {
 }
 
 let package = Package(
-    name: "cskia",
+    name: "skiawindow",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "CSkia", type: .dynamic, targets: ["CSkia"]),

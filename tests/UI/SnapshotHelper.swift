@@ -15,7 +15,7 @@ enum SnapshotHelper {
     }()
 
     static let outputDir: String = {
-        let dir = NSTemporaryDirectory() + "cskia_snapshots"
+        let dir = NSTemporaryDirectory() + "skiawindow_snapshots"
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         return dir
     }()
