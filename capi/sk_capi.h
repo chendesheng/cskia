@@ -912,6 +912,8 @@ SK_C_API sk_data_t *sk_encode_webp(gr_direct_context_t *ctx,
 
 // ===== Functions from include/core/SkFont.h =====
 SK_C_API void sk_font_delete(sk_font_t *font);
+SK_C_API float sk_font_get_size(const sk_font_t *font);
+SK_C_API void sk_font_set_size(sk_font_t *font, float size);
 SK_C_API float sk_font_get_metrics(const sk_font_t *font,
                                    sk_font_metrics_t *metrics);
 SK_C_API void sk_font_get_xpos(const sk_font_t *font, const uint16_t glyphs[],
@@ -1862,6 +1864,19 @@ SK_C_API void sk_typeface_font_provider_unref(
 // Cast to sk_font_mgr_t* — TypefaceFontProvider extends SkFontMgr.
 SK_C_API sk_font_mgr_t *
 sk_typeface_font_provider_as_fontmgr(sk_typeface_font_provider_t *provider);
+
+// ===== Matrix utilities =====
+
+SK_C_API void sk_matrix_concat(sk_matrix_t *result, const sk_matrix_t *a,
+                               const sk_matrix_t *b);
+SK_C_API bool sk_matrix_invert(const sk_matrix_t *matrix,
+                               sk_matrix_t *result);
+SK_C_API void sk_matrix_map_points(const sk_matrix_t *matrix, float dst[],
+                                   const float src[], int count);
+SK_C_API void sk_matrix_rotate_rad(float radians, sk_matrix_t *result);
+SK_C_API void sk_matrix_scale(float sx, float sy, sk_matrix_t *result);
+SK_C_API void sk_matrix_translate(float dx, float dy, sk_matrix_t *result);
+SK_C_API void sk_matrix_skew(float kx, float ky, sk_matrix_t *result);
 
 #ifdef __cplusplus
 }

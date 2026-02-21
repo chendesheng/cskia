@@ -97,6 +97,34 @@ export class Paragraph {
     return { position, affinity: affinityBuf[0] };
   }
 
+  didExceedMaxLines(): boolean {
+    return sk.sk_paragraph_did_exceed_max_lines(this.#ptr) as boolean;
+  }
+
+  getAlphabeticBaseline(): number {
+    return sk.sk_paragraph_get_alphabetic_baseline(this.#ptr) as number;
+  }
+
+  getIdeographicBaseline(): number {
+    return sk.sk_paragraph_get_ideographic_baseline(this.#ptr) as number;
+  }
+
+  getLongestLine(): number {
+    return sk.sk_paragraph_get_longest_line(this.#ptr) as number;
+  }
+
+  getMaxIntrinsicWidth(): number {
+    return sk.sk_paragraph_get_max_intrinsic_width(this.#ptr) as number;
+  }
+
+  getMinIntrinsicWidth(): number {
+    return sk.sk_paragraph_get_min_intrinsic_width(this.#ptr) as number;
+  }
+
+  getMaxWidth(): number {
+    return sk.sk_paragraph_get_max_width(this.#ptr) as number;
+  }
+
   delete(): void {
     // Paragraph lifecycle is managed by the builder in the C API;
     // no separate delete symbol is currently exposed.

@@ -1,9 +1,10 @@
 import { skLib, toF32Bytes } from "./binding.ts";
 import type { Color4f } from "./Color.ts";
 import type { Paint } from "./Paint.ts";
-import type { Path } from "./Path.ts";
+import { Path } from "./Path.ts";
 import type { Paragraph } from "./Paragraph.ts";
-import type { Rect } from "./Rect.ts";
+import { rrectGetRect, rrectIsUniform } from "./Rect.ts";
+import type { Rect, RRect } from "./Rect.ts";
 
 const sk = skLib.symbols;
 
@@ -27,6 +28,23 @@ export class Canvas {
     sk.sk_canvas_restore(this.#ptr);
   }
 
+  restoreToCount(saveCount: number): void {
+    sk.sk_canvas_restore_to_count(this.#ptr, saveCount);
+  }
+
+  getSaveCount(): number {
+    return sk.sk_canvas_get_save_count(this.#ptr) as number;
+  }
+
+  saveLayer(paint?: Paint | null, bounds?: Rect | null): number {
+    const boundsBytes = bounds ? toF32Bytes(bounds) : null;
+    return sk.sk_canvas_save_layer(
+      this.#ptr,
+      boundsBytes,
+      paint ? paint._ptr : null,
+    ) as number;
+  }
+
   saveLayerAlpha(rect: Rect | null, alpha: number): number {
     const rectBytes = rect ? toF32Bytes(rect) : null;
     return sk.sk_canvas_save_layer_alpha(this.#ptr, rectBytes, alpha) as number;
@@ -40,8 +58,28 @@ export class Canvas {
     sk.sk_canvas_translate(this.#ptr, dx, dy);
   }
 
+  rotate(degrees: number, rx: number, ry: number): void {
+    if (rx !== 0 || ry !== 0) {
+      sk.sk_canvas_translate(this.#ptr, rx, ry);
+    }
+    sk.sk_canvas_rotate_radians(this.#ptr, (degrees * Math.PI) / 180);
+    if (rx !== 0 || ry !== 0) {
+      sk.sk_canvas_translate(this.#ptr, -rx, -ry);
+    }
+  }
+
+  skew(sx: number, sy: number): void {
+    sk.sk_canvas_skew(this.#ptr, sx, sy);
+  }
+
   concat(matrix: Float32Array): void {
     sk.sk_canvas_concat(this.#ptr, toF32Bytes(matrix));
+  }
+
+  getTotalMatrix(): number[] {
+    const buf = new Float32Array(9);
+    sk.sk_canvas_get_total_matrix(this.#ptr, toF32Bytes(buf));
+    return Array.from(buf);
   }
 
   drawPath(path: Path, paint: Paint): void {
@@ -53,11 +91,20 @@ export class Canvas {
   }
 
   /**
-   * Draw a rounded rectangle. Uniform corner radii (rx == ry for all corners).
-   * Maps to sk_canvas_draw_round_rect.
+   * Draw a rounded rectangle. Accepts a 12-float RRect matching CanvasKit.
+   * For uniform corners uses sk_canvas_draw_round_rect; for non-uniform
+   * corners constructs a temporary path.
    */
-  drawRRect(rect: Rect, rx: number, ry: number, paint: Paint): void {
-    sk.sk_canvas_draw_round_rect(this.#ptr, toF32Bytes(rect), rx, ry, paint._ptr);
+  drawRRect(rrect: RRect, paint: Paint): void {
+    const rectBytes = toF32Bytes(rrectGetRect(rrect));
+    if (rrectIsUniform(rrect)) {
+      sk.sk_canvas_draw_round_rect(this.#ptr, rectBytes, rrect[4], rrect[5], paint._ptr);
+    } else {
+      const p = new Path();
+      p.addRRect(rrect);
+      sk.sk_canvas_draw_path(this.#ptr, p._ptr, paint._ptr);
+      p.delete();
+    }
   }
 
   drawLine(
@@ -71,12 +118,45 @@ export class Canvas {
     sk.sk_canvas_draw_circle(this.#ptr, cx, cy, radius, paint._ptr);
   }
 
+  drawOval(rect: Rect, paint: Paint): void {
+    sk.sk_canvas_draw_oval(this.#ptr, toF32Bytes(rect), paint._ptr);
+  }
+
+  drawArc(
+    oval: Rect, startAngle: number, sweepAngle: number,
+    useCenter: boolean, paint: Paint,
+  ): void {
+    sk.sk_canvas_draw_arc(
+      this.#ptr, toF32Bytes(oval), startAngle, sweepAngle, useCenter, paint._ptr,
+    );
+  }
+
+  drawPaint(paint: Paint): void {
+    sk.sk_canvas_draw_paint(this.#ptr, paint._ptr);
+  }
+
+  drawColor(color: Color4f, blendMode: number = 3 /* SrcOver */): void {
+    sk.sk_canvas_draw_color4f(this.#ptr, toF32Bytes(color), blendMode);
+  }
+
+  drawPoints(mode: number, points: Float32Array, paint: Paint): void {
+    const count = points.length / 2;
+    sk.sk_canvas_draw_points(this.#ptr, mode, BigInt(count), toF32Bytes(points), paint._ptr);
+  }
+
   clipRect(rect: Rect, op: number, antialias: boolean = false): void {
     sk.sk_canvas_clip_rect_with_operation(this.#ptr, toF32Bytes(rect), op, antialias);
   }
 
   clipPath(path: Path, op: number, antialias: boolean = false): void {
     sk.sk_canvas_clip_path_with_operation(this.#ptr, path._ptr, op, antialias);
+  }
+
+  clipRRect(rrect: RRect, op: number, antialias: boolean = false): void {
+    const p = new Path();
+    p.addRRect(rrect);
+    sk.sk_canvas_clip_path_with_operation(this.#ptr, p._ptr, op, antialias);
+    p.delete();
   }
 
   drawParagraph(p: Paragraph, x: number, y: number): void {

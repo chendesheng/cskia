@@ -134,6 +134,58 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: ["pointer", "buffer", "usize"],
     result: "void",
   },
+  sk_text_style_set_foreground_paint: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  sk_text_style_set_background_paint: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  sk_text_style_set_decoration_mode: {
+    parameters: ["pointer", "i32", "i32", "u32", "i32", "f32"],
+    result: "void",
+  },
+  sk_text_style_set_decoration_color: {
+    parameters: ["pointer", "u32"],
+    result: "void",
+  },
+  sk_fontstyle_new: {
+    parameters: ["i32", "i32", "i32"],
+    result: "pointer",
+  },
+  sk_text_style_set_fontstyle: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  sk_text_style_set_height: {
+    parameters: ["pointer", "f32"],
+    result: "void",
+  },
+  sk_text_style_set_height_override: {
+    parameters: ["pointer", "bool"],
+    result: "void",
+  },
+  sk_text_style_set_half_leading: {
+    parameters: ["pointer", "bool"],
+    result: "void",
+  },
+  sk_text_style_set_letter_spacing: {
+    parameters: ["pointer", "f32"],
+    result: "void",
+  },
+  sk_text_style_set_word_spacing: {
+    parameters: ["pointer", "f32"],
+    result: "void",
+  },
+  sk_text_style_set_locale: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  sk_text_style_set_text_baseline: {
+    parameters: ["pointer", "i32"],
+    result: "void",
+  },
 
   // --- Paragraph style ---
 
@@ -143,6 +195,26 @@ export const skLib = Deno.dlopen(libPath, {
   },
   sk_paragraph_style_set_text_style: {
     parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  sk_paragraph_style_set_text_align: {
+    parameters: ["pointer", "i32"],
+    result: "void",
+  },
+  sk_paragraph_style_set_text_direction: {
+    parameters: ["pointer", "i32"],
+    result: "void",
+  },
+  sk_paragraph_style_set_max_lines: {
+    parameters: ["pointer", "usize"],
+    result: "void",
+  },
+  sk_paragraph_style_set_ellipsis: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  sk_paragraph_style_set_height: {
+    parameters: ["pointer", "f32"],
     result: "void",
   },
   sk_paragraph_style_delete: {
@@ -160,13 +232,38 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: ["pointer", "pointer"],
     result: "void",
   },
+  sk_paragraph_builder_pop: {
+    parameters: ["pointer"],
+    result: "void",
+  },
   sk_paragraph_builder_add_text: {
     parameters: ["pointer", "buffer", "usize"],
+    result: "void",
+  },
+  // sk_paragraph_placeholder_style_t:
+  //   f32  fWidth
+  //   f32  fHeight
+  //   i32  fAlignment  (sk_placeholder_alignment_t)
+  //   i32  fBaseline   (sk_text_baseline_t)
+  //   f32  fBaselineOffset
+  sk_paragraph_builder_add_placeholder: {
+    parameters: ["pointer", { struct: ["f32", "f32", "i32", "i32", "f32"] }],
     result: "void",
   },
   sk_paragraph_builder_build: {
     parameters: ["pointer"],
     result: "pointer",
+  },
+  // returns sk_span_t:
+  //   pointer  data
+  //   usize    size
+  sk_paragraph_builder_get_text: {
+    parameters: ["pointer"],
+    result: { struct: ["pointer", "usize"] },
+  },
+  sk_paragraph_builder_reset: {
+    parameters: ["pointer"],
+    result: "void",
   },
   sk_paragraph_builder_delete: {
     parameters: ["pointer"],
@@ -182,6 +279,34 @@ export const skLib = Deno.dlopen(libPath, {
   sk_paragraph_get_height: {
     parameters: ["pointer"],
     result: "f32",
+  },
+  sk_paragraph_get_max_width: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
+  sk_paragraph_get_min_intrinsic_width: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
+  sk_paragraph_get_max_intrinsic_width: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
+  sk_paragraph_get_alphabetic_baseline: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
+  sk_paragraph_get_ideographic_baseline: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
+  sk_paragraph_get_longest_line: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
+  sk_paragraph_did_exceed_max_lines: {
+    parameters: ["pointer"],
+    result: "bool",
   },
   sk_paragraph_paint: {
     parameters: ["pointer", "pointer", "f32", "f32"],
@@ -271,18 +396,30 @@ export const skLib = Deno.dlopen(libPath, {
   // --- Paint ---
 
   sk_paint_new: { parameters: [], result: "pointer" },
+  sk_paint_clone: { parameters: ["pointer"], result: "pointer" },
   sk_paint_delete: { parameters: ["pointer"], result: "void" },
   sk_paint_set_style: { parameters: ["pointer", "i32"], result: "void" },
+  sk_paint_get_style: { parameters: ["pointer"], result: "i32" },
   sk_paint_set_stroke_width: { parameters: ["pointer", "f32"], result: "void" },
+  sk_paint_get_stroke_width: { parameters: ["pointer"], result: "f32" },
   sk_paint_set_stroke_miter: { parameters: ["pointer", "f32"], result: "void" },
+  sk_paint_get_stroke_miter: { parameters: ["pointer"], result: "f32" },
   sk_paint_set_stroke_cap: { parameters: ["pointer", "i32"], result: "void" },
+  sk_paint_get_stroke_cap: { parameters: ["pointer"], result: "i32" },
   sk_paint_set_stroke_join: { parameters: ["pointer", "i32"], result: "void" },
+  sk_paint_get_stroke_join: { parameters: ["pointer"], result: "i32" },
   sk_paint_get_fill_path: { parameters: ["pointer", "pointer", "pointer", "pointer", "f32"], result: "bool" },
   sk_paint_set_color4f: { parameters: ["pointer", "buffer", "pointer"], result: "void" },
+  sk_paint_get_color: { parameters: ["pointer"], result: "u32" },
   sk_paint_set_antialias: { parameters: ["pointer", "bool"], result: "void" },
+  sk_paint_is_antialias: { parameters: ["pointer"], result: "bool" },
   sk_paint_set_shader: { parameters: ["pointer", "pointer"], result: "void" },
   sk_paint_set_maskfilter: { parameters: ["pointer", "pointer"], result: "void" },
   sk_paint_set_blend_mode: { parameters: ["pointer", "i32"], result: "void" },
+  sk_paint_set_colorfilter: { parameters: ["pointer", "pointer"], result: "void" },
+  sk_paint_set_imagefilter: { parameters: ["pointer", "pointer"], result: "void" },
+  sk_paint_set_path_effect: { parameters: ["pointer", "pointer"], result: "void" },
+  sk_paint_set_dither: { parameters: ["pointer", "bool"], result: "void" },
 
   // --- MaskFilter ---
 
@@ -295,20 +432,45 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: ["buffer", "buffer", "pointer", "buffer", "i32", "i32", "pointer"],
     result: "pointer",
   },
+  sk_shader_new_radial_gradient_color4f: {
+    parameters: ["buffer", "f32", "buffer", "pointer", "buffer", "i32", "i32", "pointer"],
+    result: "pointer",
+  },
+  sk_shader_new_sweep_gradient_color4f: {
+    parameters: ["buffer", "buffer", "pointer", "buffer", "i32", "i32", "f32", "f32", "pointer"],
+    result: "pointer",
+  },
+  sk_shader_new_two_point_conical_gradient_color4f: {
+    parameters: ["buffer", "f32", "buffer", "f32", "buffer", "pointer", "buffer", "i32", "i32", "pointer"],
+    result: "pointer",
+  },
+  sk_shader_new_color4f: { parameters: ["buffer", "pointer"], result: "pointer" },
+  sk_shader_new_blend: { parameters: ["i32", "pointer", "pointer"], result: "pointer" },
   sk_shader_unref: { parameters: ["pointer"], result: "void" },
 
   // --- Canvas (extended) ---
 
   sk_canvas_save: { parameters: ["pointer"], result: "i32" },
   sk_canvas_restore: { parameters: ["pointer"], result: "void" },
+  sk_canvas_restore_to_count: { parameters: ["pointer", "i32"], result: "void" },
+  sk_canvas_get_save_count: { parameters: ["pointer"], result: "i32" },
+  sk_canvas_save_layer: { parameters: ["pointer", "buffer", "pointer"], result: "i32" },
   sk_canvas_save_layer_alpha: { parameters: ["pointer", "buffer", "u8"], result: "i32" },
   sk_canvas_scale: { parameters: ["pointer", "f32", "f32"], result: "void" },
   sk_canvas_translate: { parameters: ["pointer", "f32", "f32"], result: "void" },
+  sk_canvas_rotate_radians: { parameters: ["pointer", "f32"], result: "void" },
+  sk_canvas_skew: { parameters: ["pointer", "f32", "f32"], result: "void" },
   sk_canvas_concat: { parameters: ["pointer", "buffer"], result: "void" },
+  sk_canvas_get_total_matrix: { parameters: ["pointer", "buffer"], result: "void" },
   sk_canvas_draw_rect: { parameters: ["pointer", "buffer", "pointer"], result: "void" },
   sk_canvas_draw_round_rect: { parameters: ["pointer", "buffer", "f32", "f32", "pointer"], result: "void" },
   sk_canvas_draw_line: { parameters: ["pointer", "f32", "f32", "f32", "f32", "pointer"], result: "void" },
   sk_canvas_draw_circle: { parameters: ["pointer", "f32", "f32", "f32", "pointer"], result: "void" },
+  sk_canvas_draw_oval: { parameters: ["pointer", "buffer", "pointer"], result: "void" },
+  sk_canvas_draw_arc: { parameters: ["pointer", "buffer", "f32", "f32", "bool", "pointer"], result: "void" },
+  sk_canvas_draw_paint: { parameters: ["pointer", "pointer"], result: "void" },
+  sk_canvas_draw_color4f: { parameters: ["pointer", "buffer", "i32"], result: "void" },
+  sk_canvas_draw_points: { parameters: ["pointer", "i32", "usize", "buffer", "pointer"], result: "void" },
   sk_canvas_clip_rect_with_operation: { parameters: ["pointer", "buffer", "i32", "bool"], result: "void" },
   sk_canvas_clip_path_with_operation: { parameters: ["pointer", "pointer", "i32", "bool"], result: "void" },
 
@@ -321,6 +483,13 @@ export const skLib = Deno.dlopen(libPath, {
 
   sk_font_new_with_values: { parameters: ["pointer", "f32", "f32", "f32"], result: "pointer" },
   sk_font_delete: { parameters: ["pointer"], result: "void" },
+  sk_font_get_size: { parameters: ["pointer"], result: "f32" },
+  sk_font_set_size: { parameters: ["pointer", "f32"], result: "void" },
+  sk_font_get_metrics: { parameters: ["pointer", "buffer"], result: "f32" },
+  sk_font_text_to_glyphs: { parameters: ["pointer", "buffer", "usize", "i32", "buffer", "i32"], result: "i32" },
+  sk_font_glyph_widths: { parameters: ["pointer", "buffer", "i32", "buffer", "buffer"], result: "void" },
+  sk_font_set_subpixel: { parameters: ["pointer", "bool"], result: "void" },
+  sk_font_set_hinting: { parameters: ["pointer", "i32"], result: "void" },
 
   // --- Font manager (extended) ---
 
@@ -363,6 +532,16 @@ export const skLib = Deno.dlopen(libPath, {
   },
   sk_typeface_font_provider_unref: { parameters: ["pointer"], result: "void" },
   sk_typeface_font_provider_as_fontmgr: { parameters: ["pointer"], result: "pointer" },
+
+  // --- Matrix ---
+
+  sk_matrix_concat: { parameters: ["buffer", "buffer", "buffer"], result: "void" },
+  sk_matrix_invert: { parameters: ["buffer", "buffer"], result: "bool" },
+  sk_matrix_map_points: { parameters: ["buffer", "buffer", "buffer", "i32"], result: "void" },
+  sk_matrix_rotate_rad: { parameters: ["f32", "buffer"], result: "void" },
+  sk_matrix_scale: { parameters: ["f32", "f32", "buffer"], result: "void" },
+  sk_matrix_translate: { parameters: ["f32", "f32", "buffer"], result: "void" },
+  sk_matrix_skew: { parameters: ["f32", "f32", "buffer"], result: "void" },
 
   // --- Color / HSV ---
 

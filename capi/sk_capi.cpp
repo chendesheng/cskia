@@ -1178,6 +1178,14 @@ void sk_font_delete(sk_font_t *font) {
   delete reinterpret_cast<SkFont *>(font);
 }
 
+float sk_font_get_size(const sk_font_t *font) {
+  return reinterpret_cast<const SkFont *>(font)->getSize();
+}
+
+void sk_font_set_size(sk_font_t *font, float size) {
+  reinterpret_cast<SkFont *>(font)->setSize(size);
+}
+
 float sk_font_get_metrics(const sk_font_t *font, sk_font_metrics_t *metrics) {
   return reinterpret_cast<const SkFont *>(font)->getMetrics(
       reinterpret_cast<SkFontMetrics *>(metrics));
@@ -4115,3 +4123,49 @@ sk_font_mgr_t *sk_typeface_font_provider_as_fontmgr(
     sk_typeface_font_provider_t *provider) {
   return reinterpret_cast<sk_font_mgr_t *>(provider);
 }
+
+// ===== Matrix utilities =====
+
+void sk_matrix_concat(sk_matrix_t *result, const sk_matrix_t *a,
+                      const sk_matrix_t *b) {
+  SkMatrix ma = AsMatrix(a);
+  SkMatrix mb = AsMatrix(b);
+  SkMatrix r = SkMatrix::Concat(ma, mb);
+  *result = ToMatrix(&r);
+}
+
+bool sk_matrix_invert(const sk_matrix_t *matrix, sk_matrix_t *result) {
+  SkMatrix m = AsMatrix(matrix);
+  SkMatrix inv;
+  if (!m.invert(&inv)) return false;
+  *result = ToMatrix(&inv);
+  return true;
+}
+
+void sk_matrix_map_points(const sk_matrix_t *matrix, float dst[],
+                          const float src[], int count) {
+  SkMatrix m = AsMatrix(matrix);
+  m.mapPoints(reinterpret_cast<SkPoint *>(dst),
+              reinterpret_cast<const SkPoint *>(src), count);
+}
+
+void sk_matrix_rotate_rad(float radians, sk_matrix_t *result) {
+  SkMatrix m = SkMatrix::RotateRad(radians);
+  *result = ToMatrix(&m);
+}
+
+void sk_matrix_scale(float sx, float sy, sk_matrix_t *result) {
+  SkMatrix m = SkMatrix::Scale(sx, sy);
+  *result = ToMatrix(&m);
+}
+
+void sk_matrix_translate(float dx, float dy, sk_matrix_t *result) {
+  SkMatrix m = SkMatrix::Translate(dx, dy);
+  *result = ToMatrix(&m);
+}
+
+void sk_matrix_skew(float kx, float ky, sk_matrix_t *result) {
+  SkMatrix m = SkMatrix::Skew(kx, ky);
+  *result = ToMatrix(&m);
+}
+
