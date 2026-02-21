@@ -63,6 +63,7 @@
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
+#include "modules/skparagraph/include/TypefaceFontProvider.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skparagraph/src/TextWrapper.h"
@@ -4047,4 +4048,70 @@ void register_image_codecs() {
   SkCodecs::Register(SkIcoDecoder::Decoder());
   SkCodecs::Register(SkBmpDecoder::Decoder());
   SkCodecs::Register(SkWbmpDecoder::Decoder());
+}
+
+// ===== FFI-friendly paragraph query wrappers =====
+
+sk_text_box_t *sk_paragraph_get_rects_for_range2(
+    sk_paragraph_t *paragraph, uint32_t start, uint32_t end,
+    sk_rect_height_style_t rect_height_style,
+    sk_rect_width_style_t rect_width_style, int32_t *count_out) {
+  auto boxes = reinterpret_cast<Paragraph *>(paragraph)->getRectsForRange(
+      start, end, to_rect_height_style(rect_height_style),
+      to_rect_width_style(rect_width_style));
+
+  *count_out = static_cast<int32_t>(boxes.size());
+  if (boxes.empty()) {
+    return nullptr;
+  }
+
+  auto *data = static_cast<sk_text_box_t *>(
+      std::malloc(boxes.size() * sizeof(sk_text_box_t)));
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    data[i].rect = reinterpret_cast<const sk_rect_t &>(boxes[i].rect);
+    data[i].direction = from_text_direction(boxes[i].direction);
+  }
+  return data;
+}
+
+void sk_text_box_data_free(sk_text_box_t *data) { std::free(data); }
+
+int32_t sk_paragraph_get_glyph_position_at_coordinate2(
+    sk_paragraph_t *paragraph, float dx, float dy, int32_t *affinity_out) {
+  auto result = reinterpret_cast<Paragraph *>(paragraph)
+                    ->getGlyphPositionAtCoordinate(dx, dy);
+  auto pos = from_position_with_affinity(result);
+  *affinity_out = static_cast<int32_t>(pos.affinity);
+  return pos.position;
+}
+
+// ===== TypefaceFontProvider =====
+
+using skia::textlayout::TypefaceFontProvider;
+
+sk_typeface_font_provider_t *sk_typeface_font_provider_new() {
+  auto provider = sk_make_sp<TypefaceFontProvider>();
+  return reinterpret_cast<sk_typeface_font_provider_t *>(provider.release());
+}
+
+void sk_typeface_font_provider_register_typeface(
+    sk_typeface_font_provider_t *provider, sk_typeface_t *typeface,
+    const sk_string_t *alias) {
+  auto *tfp = reinterpret_cast<TypefaceFontProvider *>(provider);
+  auto tf = sk_ref_sp(reinterpret_cast<SkTypeface *>(typeface));
+  if (alias) {
+    const SkString *s = reinterpret_cast<const SkString *>(alias);
+    tfp->registerTypeface(std::move(tf), *s);
+  } else {
+    tfp->registerTypeface(std::move(tf));
+  }
+}
+
+void sk_typeface_font_provider_unref(sk_typeface_font_provider_t *provider) {
+  reinterpret_cast<TypefaceFontProvider *>(provider)->unref();
+}
+
+sk_font_mgr_t *sk_typeface_font_provider_as_fontmgr(
+    sk_typeface_font_provider_t *provider) {
+  return reinterpret_cast<sk_font_mgr_t *>(provider);
 }

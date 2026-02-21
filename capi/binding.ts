@@ -268,7 +268,7 @@ export const skLib = Deno.dlopen(libPath, {
   sk_opbuilder_resolve: { parameters: ["pointer", "pointer"], result: "bool" },
   sk_opbuilder_destroy: { parameters: ["pointer"], result: "void" },
 
-  // --- Paint (minimal for Path.stroke) ---
+  // --- Paint ---
 
   sk_paint_new: { parameters: [], result: "pointer" },
   sk_paint_delete: { parameters: ["pointer"], result: "void" },
@@ -278,6 +278,91 @@ export const skLib = Deno.dlopen(libPath, {
   sk_paint_set_stroke_cap: { parameters: ["pointer", "i32"], result: "void" },
   sk_paint_set_stroke_join: { parameters: ["pointer", "i32"], result: "void" },
   sk_paint_get_fill_path: { parameters: ["pointer", "pointer", "pointer", "pointer", "f32"], result: "bool" },
+  sk_paint_set_color4f: { parameters: ["pointer", "buffer", "pointer"], result: "void" },
+  sk_paint_set_antialias: { parameters: ["pointer", "bool"], result: "void" },
+  sk_paint_set_shader: { parameters: ["pointer", "pointer"], result: "void" },
+  sk_paint_set_maskfilter: { parameters: ["pointer", "pointer"], result: "void" },
+  sk_paint_set_blend_mode: { parameters: ["pointer", "i32"], result: "void" },
+
+  // --- MaskFilter ---
+
+  sk_maskfilter_new_blur_with_flags: { parameters: ["i32", "f32", "bool"], result: "pointer" },
+  sk_maskfilter_unref: { parameters: ["pointer"], result: "void" },
+
+  // --- Shader ---
+
+  sk_shader_new_linear_gradient_color4f: {
+    parameters: ["buffer", "buffer", "pointer", "buffer", "i32", "i32", "pointer"],
+    result: "pointer",
+  },
+  sk_shader_unref: { parameters: ["pointer"], result: "void" },
+
+  // --- Canvas (extended) ---
+
+  sk_canvas_save: { parameters: ["pointer"], result: "i32" },
+  sk_canvas_restore: { parameters: ["pointer"], result: "void" },
+  sk_canvas_save_layer_alpha: { parameters: ["pointer", "buffer", "u8"], result: "i32" },
+  sk_canvas_scale: { parameters: ["pointer", "f32", "f32"], result: "void" },
+  sk_canvas_translate: { parameters: ["pointer", "f32", "f32"], result: "void" },
+  sk_canvas_concat: { parameters: ["pointer", "buffer"], result: "void" },
+  sk_canvas_draw_rect: { parameters: ["pointer", "buffer", "pointer"], result: "void" },
+  sk_canvas_draw_round_rect: { parameters: ["pointer", "buffer", "f32", "f32", "pointer"], result: "void" },
+  sk_canvas_draw_line: { parameters: ["pointer", "f32", "f32", "f32", "f32", "pointer"], result: "void" },
+  sk_canvas_draw_circle: { parameters: ["pointer", "f32", "f32", "f32", "pointer"], result: "void" },
+  sk_canvas_clip_rect_with_operation: { parameters: ["pointer", "buffer", "i32", "bool"], result: "void" },
+  sk_canvas_clip_path_with_operation: { parameters: ["pointer", "pointer", "i32", "bool"], result: "void" },
+
+  // --- Data ---
+
+  sk_data_new_with_copy: { parameters: ["buffer", "usize"], result: "pointer" },
+  sk_data_unref: { parameters: ["pointer"], result: "void" },
+
+  // --- Font ---
+
+  sk_font_new_with_values: { parameters: ["pointer", "f32", "f32", "f32"], result: "pointer" },
+  sk_font_delete: { parameters: ["pointer"], result: "void" },
+
+  // --- Font manager (extended) ---
+
+  sk_fontmgr_create_from_data: { parameters: ["pointer", "pointer", "i32"], result: "pointer" },
+
+  // --- Font collection (extended) ---
+
+  sk_font_collection_enable_font_fallback: { parameters: ["pointer"], result: "void" },
+
+  // --- Typeface ---
+
+  sk_typeface_unref: { parameters: ["pointer"], result: "void" },
+
+  // --- Paragraph (extended) ---
+
+  // FFI-friendly wrappers: returns heap-allocated sk_text_box_t array,
+  // writes element count to the count_out buffer (4-byte i32).
+  // Caller must free the returned pointer with sk_text_box_data_free.
+  sk_paragraph_get_rects_for_range2: {
+    parameters: ["pointer", "u32", "u32", "i32", "i32", "buffer"],
+    result: "pointer",
+  },
+  sk_text_box_data_free: {
+    parameters: ["pointer"],
+    result: "void",
+  },
+
+  // FFI-friendly wrapper: returns position (i32), writes affinity to buffer (4-byte i32).
+  sk_paragraph_get_glyph_position_at_coordinate2: {
+    parameters: ["pointer", "f32", "f32", "buffer"],
+    result: "i32",
+  },
+
+  // --- TypefaceFontProvider ---
+
+  sk_typeface_font_provider_new: { parameters: [], result: "pointer" },
+  sk_typeface_font_provider_register_typeface: {
+    parameters: ["pointer", "pointer", "pointer"],
+    result: "void",
+  },
+  sk_typeface_font_provider_unref: { parameters: ["pointer"], result: "void" },
+  sk_typeface_font_provider_as_fontmgr: { parameters: ["pointer"], result: "pointer" },
 
   // --- Color / HSV ---
 

@@ -19,8 +19,20 @@ export class FontCollection {
     return this.#ptr;
   }
 
-  setDefaultFontManager(mgr: FontMgr): void {
+  setDefaultFontManager(mgr: FontMgr | { _ptr: Deno.PointerValue }): void {
     sk.sk_font_collection_set_default_font_manager(this.#ptr, mgr._ptr);
+  }
+
+  /**
+   * Set the default font manager from a raw pointer
+   * (e.g. from TypefaceFontProvider.asFontMgr()).
+   */
+  setDefaultFontManagerPtr(ptr: Deno.PointerValue): void {
+    sk.sk_font_collection_set_default_font_manager(this.#ptr, ptr);
+  }
+
+  enableFontFallback(): void {
+    sk.sk_font_collection_enable_font_fallback(this.#ptr);
   }
 
   delete(): void {

@@ -1833,6 +1833,36 @@ SK_C_API sk_document_t *sk_document_make_pdf(sk_wstream_t *stream,
 // ===== Functions from include/codec/SkCodec.h =====
 SK_C_API void register_image_codecs();
 
+// ===== FFI-friendly paragraph query wrappers =====
+
+// Returns heap-allocated sk_text_box_t array. Writes element count to
+// *count_out. Caller must free the returned pointer with
+// sk_text_box_data_free().
+SK_C_API sk_text_box_t *sk_paragraph_get_rects_for_range2(
+    sk_paragraph_t *paragraph, uint32_t start, uint32_t end,
+    sk_rect_height_style_t rect_height_style,
+    sk_rect_width_style_t rect_width_style, int32_t *count_out);
+
+SK_C_API void sk_text_box_data_free(sk_text_box_t *data);
+
+// Returns the glyph position (int32_t). Writes affinity to *affinity_out.
+SK_C_API int32_t sk_paragraph_get_glyph_position_at_coordinate2(
+    sk_paragraph_t *paragraph, float dx, float dy, int32_t *affinity_out);
+
+// ===== TypefaceFontProvider =====
+
+typedef struct sk_typeface_font_provider_t sk_typeface_font_provider_t;
+
+SK_C_API sk_typeface_font_provider_t *sk_typeface_font_provider_new();
+SK_C_API void sk_typeface_font_provider_register_typeface(
+    sk_typeface_font_provider_t *provider, sk_typeface_t *typeface,
+    const sk_string_t *alias);
+SK_C_API void sk_typeface_font_provider_unref(
+    sk_typeface_font_provider_t *provider);
+// Cast to sk_font_mgr_t* — TypefaceFontProvider extends SkFontMgr.
+SK_C_API sk_font_mgr_t *
+sk_typeface_font_provider_as_fontmgr(sk_typeface_font_provider_t *provider);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
