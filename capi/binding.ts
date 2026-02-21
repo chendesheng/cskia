@@ -15,6 +15,8 @@ const utf8Encoder = new TextEncoder();
 
 export const GR_SURFACE_ORIGIN_TOP_LEFT = 0;
 export const SK_COLOR_TYPE_BGRA_8888 = 6;
+export const SK_COLOR_TYPE_RGBA_8888 = 4;
+export const SK_ALPHA_TYPE_PREMUL = 2;
 
 // ---------------------------------------------------------------------------
 // FFI symbol definitions
@@ -54,13 +56,35 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: ["pointer", "pointer", "i32", "i32", "pointer", "pointer"],
     result: "pointer",
   },
+  sk_surface_make_raster_n32_premul: {
+    parameters: ["buffer", "pointer"],
+    result: "pointer",
+  },
   sk_surface_get_canvas: {
+    parameters: ["pointer"],
+    result: "pointer",
+  },
+  sk_surface_make_image_snapshot: {
     parameters: ["pointer"],
     result: "pointer",
   },
   sk_surface_unref: {
     parameters: ["pointer"],
     result: "void",
+  },
+
+  // --- Image ---
+
+  sk_image_unref: {
+    parameters: ["pointer"],
+    result: "void",
+  },
+
+  // --- Image encoding ---
+
+  sk_encode_png: {
+    parameters: ["pointer", "pointer", "i32"],
+    result: "pointer",
   },
 
   // --- Canvas ---
@@ -477,6 +501,8 @@ export const skLib = Deno.dlopen(libPath, {
   // --- Data ---
 
   sk_data_new_with_copy: { parameters: ["buffer", "usize"], result: "pointer" },
+  sk_data_get_data: { parameters: ["pointer"], result: "pointer" },
+  sk_data_get_size: { parameters: ["pointer"], result: "usize" },
   sk_data_unref: { parameters: ["pointer"], result: "void" },
 
   // --- Font ---
@@ -650,4 +676,24 @@ export function paragraphBuilderAddUtf8(
     bytes,
     BigInt(bytes.length),
   );
+}
+
+/**
+ * Build an sk_image_info_t struct for RGBA_8888 premul.
+ * Layout: { colorSpace*: 8, colorType: i32, alphaType: i32, width: i32, height: i32 } = 24 bytes.
+ */
+export function createImageInfo(
+  width: number,
+  height: number,
+  colorType: number = SK_COLOR_TYPE_RGBA_8888,
+  alphaType: number = SK_ALPHA_TYPE_PREMUL,
+): Uint8Array<ArrayBuffer> {
+  const ab = new ArrayBuffer(24);
+  const dv = new DataView(ab);
+  dv.setBigUint64(0, 0n, true);
+  dv.setInt32(8, colorType, true);
+  dv.setInt32(12, alphaType, true);
+  dv.setInt32(16, width, true);
+  dv.setInt32(20, height, true);
+  return new Uint8Array(ab);
 }

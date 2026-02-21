@@ -1,7 +1,7 @@
-/skia
 /dist
 .DS_Store
 *.o
 *.dylib
 demo
 .build
+tests/__snapshots_output__/
