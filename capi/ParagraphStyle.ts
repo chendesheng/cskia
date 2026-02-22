@@ -1,10 +1,10 @@
 import { skLib, skStringNew } from "./binding.ts";
-import type { TextStyle } from "./TextStyle.ts";
+import { TextStyle, type TextStyleOptions } from "./TextStyle.ts";
 
 const sk = skLib.symbols;
 
 export interface ParagraphStyleOptions {
-  textStyle?: TextStyle;
+  textStyle?: TextStyle | TextStyleOptions;
   textAlign?: number;
   textDirection?: number;
   maxLines?: number;
@@ -17,7 +17,13 @@ export class ParagraphStyle {
 
   constructor(opts?: ParagraphStyleOptions) {
     this.#ptr = sk.sk_paragraph_style_new();
-    if (opts?.textStyle) this.setTextStyle(opts.textStyle);
+    if (opts?.textStyle) {
+      const ts =
+        opts.textStyle instanceof TextStyle
+          ? opts.textStyle
+          : new TextStyle(opts.textStyle);
+      this.setTextStyle(ts);
+    }
     if (opts?.textAlign !== undefined) this.setTextAlign(opts.textAlign);
     if (opts?.textDirection !== undefined) this.setTextDirection(opts.textDirection);
     if (opts?.maxLines !== undefined) this.setMaxLines(opts.maxLines);

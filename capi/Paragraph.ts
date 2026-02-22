@@ -8,7 +8,7 @@ export interface TextBox {
 }
 
 export interface PositionWithAffinity {
-  position: number;
+  pos: number;
   affinity: number;
 }
 
@@ -87,14 +87,14 @@ export class Paragraph {
       affinityBuf.buffer,
     ) as Uint8Array<ArrayBuffer>;
 
-    const position = sk.sk_paragraph_get_glyph_position_at_coordinate2(
+    const pos = sk.sk_paragraph_get_glyph_position_at_coordinate2(
       this.#ptr,
       dx,
       dy,
       affinityBytes,
     ) as number;
 
-    return { position, affinity: affinityBuf[0] };
+    return { pos, affinity: affinityBuf[0] };
   }
 
   didExceedMaxLines(): boolean {
@@ -123,6 +123,45 @@ export class Paragraph {
 
   getMaxWidth(): number {
     return sk.sk_paragraph_get_max_width(this.#ptr) as number;
+  }
+
+  getWordBoundary(pos: number): { start: number; end: number } {
+    const buf = new Int32Array(2);
+    const bytes = new Uint8Array(buf.buffer) as Uint8Array<ArrayBuffer>;
+    sk.sk_paragraph_get_word_boundary(this.#ptr, pos, bytes);
+    return { start: buf[0], end: buf[1] };
+  }
+
+  getRectsForPlaceholders(): TextBox[] {
+    const countBuf = new Int32Array(1);
+    const countBytes = new Uint8Array(
+      countBuf.buffer,
+    ) as Uint8Array<ArrayBuffer>;
+
+    const dataPtr = sk.sk_paragraph_get_rects_for_placeholders2(
+      this.#ptr,
+      countBytes,
+    );
+
+    const count = countBuf[0];
+    if (count === 0 || !dataPtr) return [];
+
+    const BOX_SIZE = 20;
+    const view = new Deno.UnsafePointerView(dataPtr);
+    const results: TextBox[] = [];
+    for (let i = 0; i < count; i++) {
+      const offset = i * BOX_SIZE;
+      const rect = new Float32Array(4);
+      rect[0] = view.getFloat32(offset);
+      rect[1] = view.getFloat32(offset + 4);
+      rect[2] = view.getFloat32(offset + 8);
+      rect[3] = view.getFloat32(offset + 12);
+      const direction = view.getInt32(offset + 16);
+      results.push({ rect, direction });
+    }
+
+    sk.sk_text_box_data_free(dataPtr);
+    return results;
   }
 
   delete(): void {

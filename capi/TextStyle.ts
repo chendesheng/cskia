@@ -22,6 +22,10 @@ export interface TextStyleOptions {
   locale?: string;
   textBaseline?: number;
   fontStyle?: FontStyleSpec;
+  decoration?: number;
+  decorationColor?: Color4f;
+  decorationThickness?: number;
+  decorationStyle?: number;
 }
 
 export class TextStyle {
@@ -39,6 +43,15 @@ export class TextStyle {
     if (opts?.locale !== undefined) this.setLocale(opts.locale);
     if (opts?.textBaseline !== undefined) this.setTextBaseline(opts.textBaseline);
     if (opts?.fontStyle !== undefined) this.setFontStyle(opts.fontStyle);
+    if (opts?.decoration !== undefined) {
+      this.setDecoration(
+        opts.decoration,
+        opts.decorationStyle,
+        opts.decorationColor ? color4fToColor(opts.decorationColor) : undefined,
+        undefined,
+        opts.decorationThickness,
+      );
+    }
   }
 
   get _ptr(): Deno.PointerValue {

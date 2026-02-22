@@ -4093,6 +4093,34 @@ int32_t sk_paragraph_get_glyph_position_at_coordinate2(
   return pos.position;
 }
 
+void sk_paragraph_get_word_boundary(sk_paragraph_t *paragraph, int32_t pos,
+                                    int32_t *out) {
+  auto range = reinterpret_cast<Paragraph *>(paragraph)->getWordBoundary(
+      static_cast<unsigned>(pos));
+  out[0] = static_cast<int32_t>(range.start);
+  out[1] = static_cast<int32_t>(range.end);
+}
+
+sk_text_box_t *
+sk_paragraph_get_rects_for_placeholders2(sk_paragraph_t *paragraph,
+                                         int32_t *count_out) {
+  auto boxes =
+      reinterpret_cast<Paragraph *>(paragraph)->getRectsForPlaceholders();
+
+  *count_out = static_cast<int32_t>(boxes.size());
+  if (boxes.empty()) {
+    return nullptr;
+  }
+
+  auto *data = static_cast<sk_text_box_t *>(
+      std::malloc(boxes.size() * sizeof(sk_text_box_t)));
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    data[i].rect = reinterpret_cast<const sk_rect_t &>(boxes[i].rect);
+    data[i].direction = from_text_direction(boxes[i].direction);
+  }
+  return data;
+}
+
 // ===== TypefaceFontProvider =====
 
 using skia::textlayout::TypefaceFontProvider;

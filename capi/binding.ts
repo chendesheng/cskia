@@ -549,6 +549,15 @@ export const skLib = Deno.dlopen(libPath, {
     result: "i32",
   },
 
+  sk_paragraph_get_word_boundary: {
+    parameters: ["pointer", "i32", "buffer"],
+    result: "void",
+  },
+  sk_paragraph_get_rects_for_placeholders2: {
+    parameters: ["pointer", "buffer"],
+    result: "pointer",
+  },
+
   // --- TypefaceFontProvider ---
 
   sk_typeface_font_provider_new: { parameters: [], result: "pointer" },

@@ -1851,6 +1851,13 @@ SK_C_API void sk_text_box_data_free(sk_text_box_t *data);
 SK_C_API int32_t sk_paragraph_get_glyph_position_at_coordinate2(
     sk_paragraph_t *paragraph, float dx, float dy, int32_t *affinity_out);
 
+SK_C_API void sk_paragraph_get_word_boundary(sk_paragraph_t *paragraph,
+                                             int32_t pos, int32_t *out);
+
+SK_C_API sk_text_box_t *
+sk_paragraph_get_rects_for_placeholders2(sk_paragraph_t *paragraph,
+                                         int32_t *count_out);
+
 // ===== TypefaceFontProvider =====
 
 typedef struct sk_typeface_font_provider_t sk_typeface_font_provider_t;
