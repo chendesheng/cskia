@@ -97,7 +97,7 @@ final class MetalView: MTKView {
 
     override func scrollWheel(with event: NSEvent) {
         let (mods, button, x, y) = mouseParams(event)
-        state.onWheel?(mods, button, x, y, event.scrollingDeltaX, event.scrollingDeltaY)
+        state.onWheel?(mods, button, x, y, -event.scrollingDeltaX, -event.scrollingDeltaY)
     }
 
     // MARK: Tracking area (required for mouseMoved events)

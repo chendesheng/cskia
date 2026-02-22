@@ -195,6 +195,8 @@ final class EventTests: XCTestCase {
         let center = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         settleAt(center)
         center.scroll(byDeltaX: 0, deltaY: 3)
+        center.scroll(byDeltaX: 0, deltaY: -2)
+        center.scroll(byDeltaX: 0, deltaY: 5)
         assertEventSnapshot(named: "testWheelScrollVertical")
     }
 
@@ -203,6 +205,8 @@ final class EventTests: XCTestCase {
         let center = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         settleAt(center)
         center.scroll(byDeltaX: 3, deltaY: 0)
+        center.scroll(byDeltaX: -2, deltaY: 0)
+        center.scroll(byDeltaX: 5, deltaY: 0)
         assertEventSnapshot(named: "testWheelScrollHorizontal")
     }
 
