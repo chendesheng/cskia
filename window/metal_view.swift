@@ -93,6 +93,13 @@ final class MetalView: MTKView {
     override func rightMouseDragged(with event: NSEvent)  { fireMouseMove(event) }
     override func otherMouseDragged(with event: NSEvent)  { fireMouseMove(event) }
 
+    // MARK: Scroll wheel
+
+    override func scrollWheel(with event: NSEvent) {
+        let (mods, button, x, y) = mouseParams(event)
+        state.onWheel?(mods, button, x, y, event.scrollingDeltaX, event.scrollingDeltaY)
+    }
+
     // MARK: Tracking area (required for mouseMoved events)
 
     override func updateTrackingAreas() {

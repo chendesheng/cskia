@@ -87,6 +87,18 @@ export const winLib = Deno.dlopen(libPath, {
     parameters: ["pointer", "pointer"],
     result: "void",
   },
+  window_set_on_wheel: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  window_set_on_window_focus: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
+  window_set_on_window_blur: {
+    parameters: ["pointer", "pointer"],
+    result: "void",
+  },
 
   // --- Frame ---
 
@@ -300,6 +312,15 @@ export type KeyHandler = (
   key: string,
 ) => void;
 
+export type WheelHandler = (
+  mods: Modifiers,
+  button: number,
+  x: number,
+  y: number,
+  deltaX: number,
+  deltaY: number,
+) => void;
+
 const MOUSE_CB_DEF = {
   parameters: ["u32", "i32", "f64", "f64"],
   result: "void",
@@ -325,7 +346,13 @@ const RENDER_CB_DEF = {
   result: "void",
 } as const;
 
+const WHEEL_CB_DEF = {
+  parameters: ["u32", "i32", "f64", "f64", "f64", "f64"],
+  result: "void",
+} as const;
+
 type MouseCb = Deno.UnsafeCallback<typeof MOUSE_CB_DEF>;
+type WheelCb = Deno.UnsafeCallback<typeof WHEEL_CB_DEF>;
 type KeyCb = Deno.UnsafeCallback<typeof KEY_CB_DEF>;
 type VoidCb = Deno.UnsafeCallback<typeof VOID_CB_DEF>;
 type ResizeCb = Deno.UnsafeCallback<typeof RESIZE_CB_DEF>;
@@ -429,6 +456,38 @@ export function setOnRender(
 ): RenderCb {
   const cb = new Deno.UnsafeCallback(RENDER_CB_DEF, handler);
   winLib.symbols.window_set_on_render(win, cb.pointer);
+  return cb;
+}
+
+export function setOnWheel(
+  win: Deno.PointerValue,
+  handler: WheelHandler,
+): WheelCb {
+  const cb = new Deno.UnsafeCallback(
+    WHEEL_CB_DEF,
+    (modBits: number, button: number, x: number, y: number, deltaX: number, deltaY: number) => {
+      handler(decodeModifiers(modBits), button, x, y, deltaX, deltaY);
+    },
+  );
+  winLib.symbols.window_set_on_wheel(win, cb.pointer);
+  return cb;
+}
+
+export function setOnWindowFocus(
+  win: Deno.PointerValue,
+  handler: () => void,
+): VoidCb {
+  const cb = new Deno.UnsafeCallback(VOID_CB_DEF, handler);
+  winLib.symbols.window_set_on_window_focus(win, cb.pointer);
+  return cb;
+}
+
+export function setOnWindowBlur(
+  win: Deno.PointerValue,
+  handler: () => void,
+): VoidCb {
+  const cb = new Deno.UnsafeCallback(VOID_CB_DEF, handler);
+  winLib.symbols.window_set_on_window_blur(win, cb.pointer);
   return cb;
 }
 

@@ -11,7 +11,10 @@ import {
   setOnMouseMove,
   setOnMouseUp,
   setOnRender,
+  setOnWheel,
+  setOnWindowBlur,
   setOnWindowClose,
+  setOnWindowFocus,
   setOnWindowResize,
   setWindowTitle,
   winLib,
@@ -41,6 +44,11 @@ export type KeyEventDetail = {
   metaKey: boolean;
 };
 
+export type WheelEventDetail = MouseEventDetail & {
+  deltaX: number;
+  deltaY: number;
+};
+
 export type ResizeEventDetail = {
   width: number;
   height: number;
@@ -61,9 +69,13 @@ export interface WindowEventMap {
   mousedown: CustomEvent<MouseEventDetail>;
   mouseup: CustomEvent<MouseEventDetail>;
   mousemove: CustomEvent<MouseEventDetail>;
+  wheel: CustomEvent<WheelEventDetail>;
+  contextmenu: CustomEvent<MouseEventDetail>;
   keydown: CustomEvent<KeyEventDetail>;
   keyup: CustomEvent<KeyEventDetail>;
   close: Event;
+  focus: Event;
+  blur: Event;
   resize: CustomEvent<ResizeEventDetail>;
   render: CustomEvent<RenderEventDetail>;
 }
@@ -133,11 +145,11 @@ export class Window extends EventTarget {
 
     this.#callbacks.push(
       setOnMouseDown(ptr, (mods, button, x, y) => {
-        this.dispatchEvent(
-          new CustomEvent("mousedown", {
-            detail: { ...mods, button, x, y },
-          }),
-        );
+        const detail = { ...mods, button, x, y };
+        this.dispatchEvent(new CustomEvent("mousedown", { detail }));
+        if (button === 1) {
+          this.dispatchEvent(new CustomEvent("contextmenu", { detail }));
+        }
       }),
       setOnMouseUp(ptr, (mods, button, x, y) => {
         this.dispatchEvent(
@@ -186,6 +198,19 @@ export class Window extends EventTarget {
           }),
         );
         sym.window_present_drawable(ptr);
+      }),
+      setOnWheel(ptr, (mods, button, x, y, deltaX, deltaY) => {
+        this.dispatchEvent(
+          new CustomEvent("wheel", {
+            detail: { ...mods, button, x, y, deltaX, deltaY },
+          }),
+        );
+      }),
+      setOnWindowFocus(ptr, () => {
+        this.dispatchEvent(new Event("focus"));
+      }),
+      setOnWindowBlur(ptr, () => {
+        this.dispatchEvent(new Event("blur"));
       }),
     );
   }

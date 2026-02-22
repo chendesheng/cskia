@@ -7,6 +7,7 @@
  *   window_set_on_mouse_down / window_set_on_mouse_up / window_set_on_mouse_move
  *   window_set_on_key_down / window_set_on_key_up
  *   window_set_on_window_close / window_set_on_window_resize / window_set_on_render
+ *   window_set_on_wheel / window_set_on_window_focus / window_set_on_window_blur
  *   window_get_next_drawable / drawable_get_texture / present_drawable
  *   window_get_scale
  *   window_set_title / window_set_width / window_set_height
@@ -308,6 +309,24 @@ public func windowSetOnWindowResize(_ win: UnsafeMutableRawPointer?, _ cb: Resiz
 public func windowSetOnRender(_ win: UnsafeMutableRawPointer?, _ cb: RenderCallback?) {
     guard let win else { return }
     stateFrom(win).onRender = cb
+}
+
+@_cdecl("window_set_on_wheel")
+public func windowSetOnWheel(_ win: UnsafeMutableRawPointer?, _ cb: WheelCallback?) {
+    guard let win else { return }
+    stateFrom(win).onWheel = cb
+}
+
+@_cdecl("window_set_on_window_focus")
+public func windowSetOnWindowFocus(_ win: UnsafeMutableRawPointer?, _ cb: VoidCallback?) {
+    guard let win else { return }
+    stateFrom(win).onWindowFocus = cb
+}
+
+@_cdecl("window_set_on_window_blur")
+public func windowSetOnWindowBlur(_ win: UnsafeMutableRawPointer?, _ cb: VoidCallback?) {
+    guard let win else { return }
+    stateFrom(win).onWindowBlur = cb
 }
 
 // MARK: - Frame

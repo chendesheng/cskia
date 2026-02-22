@@ -15,6 +15,7 @@ public typealias KeyCallback      = @convention(c) (UInt32, UInt16, UInt8, Int32
 public typealias VoidCallback     = @convention(c) () -> Void
 public typealias ResizeCallback   = @convention(c) (Int32, Int32) -> Void
 public typealias RenderCallback   = @convention(c) (Int32, Int32, Double) -> Void
+public typealias WheelCallback    = @convention(c) (UInt32, Int32, Double, Double, Double, Double) -> Void
 
 // MARK: - AppState (singleton — NSApplicationDelegate + shared Metal resources)
 
@@ -56,9 +57,12 @@ final class WindowState: NSObject, NSWindowDelegate {
     var onMouseMove: MouseCallback?
     var onKeyDown: KeyCallback?
     var onKeyUp: KeyCallback?
+    var onWheel: WheelCallback?
     var onWindowClose: VoidCallback?
     var onWindowResize: ResizeCallback?
     var onRender: RenderCallback?
+    var onWindowFocus: VoidCallback?
+    var onWindowBlur: VoidCallback?
 
     var preserveDrawingBuffer: Bool = false
     var offscreenTexture: MTLTexture? = nil
@@ -74,6 +78,14 @@ final class WindowState: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         metalView.isPaused = true
         onWindowClose?()
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        onWindowFocus?()
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        onWindowBlur?()
     }
 }
 
