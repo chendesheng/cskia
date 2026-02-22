@@ -58,8 +58,7 @@ let package = Package(
             exclude: nonSourceFiles(in: "window", sourceExtensions: ["swift"]),
             linkerSettings: [
                 .linkedFramework("Cocoa"),
-                .linkedFramework("Metal"),
-                .linkedFramework("QuartzCore"),
+                .linkedFramework("MetalKit"),
             ]
         ),
     ],

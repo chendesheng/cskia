@@ -24,7 +24,7 @@ final class WindowTests: XCTestCase {
     func testClickChangesBackground() {
         let window = app.windows.firstMatch
         window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-
+        Thread.sleep(forTimeInterval: 0.2)
         let screenshot = window.screenshot().image
         SnapshotHelper.assertSnapshot(screenshot, named: "testClickChangesBackground")
     }
@@ -32,9 +32,9 @@ final class WindowTests: XCTestCase {
     func testKeyResetsBackground() {
         let window = app.windows.firstMatch
         window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-
+        Thread.sleep(forTimeInterval: 0.2)
         app.typeKey("r", modifierFlags: [])
-
+        Thread.sleep(forTimeInterval: 0.2)
         let screenshot = window.screenshot().image
         SnapshotHelper.assertSnapshot(screenshot, named: "testKeyResetsBackground")
     }

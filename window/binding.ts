@@ -320,10 +320,16 @@ const RESIZE_CB_DEF = {
   result: "void",
 } as const;
 
+const RENDER_CB_DEF = {
+  parameters: ["i32", "i32", "f64"],
+  result: "void",
+} as const;
+
 type MouseCb = Deno.UnsafeCallback<typeof MOUSE_CB_DEF>;
 type KeyCb = Deno.UnsafeCallback<typeof KEY_CB_DEF>;
 type VoidCb = Deno.UnsafeCallback<typeof VOID_CB_DEF>;
 type ResizeCb = Deno.UnsafeCallback<typeof RESIZE_CB_DEF>;
+type RenderCb = Deno.UnsafeCallback<typeof RENDER_CB_DEF>;
 
 function makeMouseCb(handler: MouseHandler): MouseCb {
   return new Deno.UnsafeCallback(
@@ -419,9 +425,9 @@ export function setOnWindowResize(
 
 export function setOnRender(
   win: Deno.PointerValue,
-  handler: () => void,
-): VoidCb {
-  const cb = new Deno.UnsafeCallback(VOID_CB_DEF, handler);
+  handler: (drawableWidth: number, drawableHeight: number, scale: number) => void,
+): RenderCb {
+  const cb = new Deno.UnsafeCallback(RENDER_CB_DEF, handler);
   winLib.symbols.window_set_on_render(win, cb.pointer);
   return cb;
 }

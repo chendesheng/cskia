@@ -6,8 +6,7 @@
  */
 
 import Cocoa
-import Metal
-import QuartzCore
+import MetalKit
 
 // MARK: - Callback typedefs
 
@@ -15,6 +14,7 @@ public typealias MouseCallback    = @convention(c) (UInt32, Int32, Double, Doubl
 public typealias KeyCallback      = @convention(c) (UInt32, UInt16, UInt8, Int32, UInt32) -> Void
 public typealias VoidCallback     = @convention(c) () -> Void
 public typealias ResizeCallback   = @convention(c) (Int32, Int32) -> Void
+public typealias RenderCallback   = @convention(c) (Int32, Int32, Double) -> Void
 
 // MARK: - AppState (singleton — NSApplicationDelegate + shared Metal resources)
 
@@ -58,7 +58,7 @@ final class WindowState: NSObject, NSWindowDelegate {
     var onKeyUp: KeyCallback?
     var onWindowClose: VoidCallback?
     var onWindowResize: ResizeCallback?
-    var onRender: VoidCallback?
+    var onRender: RenderCallback?
 
     var preserveDrawingBuffer: Bool = false
     var offscreenTexture: MTLTexture? = nil
@@ -72,7 +72,7 @@ final class WindowState: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        metalView.stopDisplayLink()
+        metalView.isPaused = true
         onWindowClose?()
     }
 }

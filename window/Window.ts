@@ -177,12 +177,9 @@ export class Window extends EventTarget {
           }),
         );
       }),
-      setOnRender(ptr, () => {
+      setOnRender(ptr, (width, height, scale) => {
         const texture = sym.window_get_next_drawable_texture(ptr);
         if (!texture) return;
-        const width = sym.window_get_width(ptr) as number;
-        const height = sym.window_get_height(ptr) as number;
-        const scale = sym.window_get_scale(ptr) as number;
         this.dispatchEvent(
           new CustomEvent("render", {
             detail: { texture, width, height, scale },

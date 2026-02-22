@@ -17,6 +17,7 @@ final class PreserveBufferOnTests: XCTestCase {
     func testTwoRectsAfterClick() {
         let window = app.windows.firstMatch
         window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        Thread.sleep(forTimeInterval: 0.2)
         let screenshot = window.screenshot().image
         SnapshotHelper.assertSnapshot(screenshot, named: "testPreserveBufferOn")
     }
@@ -39,6 +40,7 @@ final class PreserveBufferOffTests: XCTestCase {
     func testOneRectAfterClick() {
         let window = app.windows.firstMatch
         window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        Thread.sleep(forTimeInterval: 0.2)
         let screenshot = window.screenshot().image
         SnapshotHelper.assertSnapshot(screenshot, named: "testPreserveBufferOff")
     }

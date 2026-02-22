@@ -17,17 +17,16 @@
  *   window_get_resizable
  */
 
-import Cocoa
-import Metal
-import QuartzCore
 import Carbon.HIToolbox
+import Cocoa
+import MetalKit
 
 // MARK: - Constants
 
-private let MOD_CTRL: UInt32  = 1 << 0
+private let MOD_CTRL: UInt32 = 1 << 0
 private let MOD_SHIFT: UInt32 = 1 << 1
-private let MOD_ALT: UInt32   = 1 << 2
-private let MOD_META: UInt32  = 1 << 3
+private let MOD_ALT: UInt32 = 1 << 2
+private let MOD_META: UInt32 = 1 << 3
 
 private let KEY_KIND_NONE: Int32 = 0
 private let KEY_KIND_TEXT: Int32 = 1
@@ -211,7 +210,7 @@ public func appGetMetalQueue() -> UnsafeMutableRawPointer? {
 
 @_cdecl("window_create")
 public func windowCreate(
-    _ width:  Int32,
+    _ width: Int32,
     _ height: Int32,
     _ title: UnsafePointer<UInt8>?,
     _ titleLen: Int
@@ -223,9 +222,9 @@ public func windowCreate(
 
     let nsWin = NSWindow(
         contentRect: frame,
-        styleMask:   [.titled, .closable, .resizable, .miniaturizable],
-        backing:     .buffered,
-        defer:       false
+        styleMask: [.titled, .closable, .resizable, .miniaturizable],
+        backing: .buffered,
+        defer: false
     )
     nsWin.title = titleStr
     nsWin.center()
@@ -246,7 +245,7 @@ public func windowShow(_ win: UnsafeMutableRawPointer?) {
     s.window.makeKeyAndOrderFront(nil)
     s.window.makeFirstResponder(s.metalView)
     NSApp.activate(ignoringOtherApps: true)
-    s.metalView.startDisplayLink()
+    s.metalView.isPaused = false
 }
 
 @_cdecl("window_run")
@@ -306,7 +305,7 @@ public func windowSetOnWindowResize(_ win: UnsafeMutableRawPointer?, _ cb: Resiz
 }
 
 @_cdecl("window_set_on_render")
-public func windowSetOnRender(_ win: UnsafeMutableRawPointer?, _ cb: VoidCallback?) {
+public func windowSetOnRender(_ win: UnsafeMutableRawPointer?, _ cb: RenderCallback?) {
     guard let win else { return }
     stateFrom(win).onRender = cb
 }
@@ -320,12 +319,15 @@ public func windowSetPreserveDrawingBuffer(_ win: UnsafeMutableRawPointer?, _ fl
 }
 
 @_cdecl("window_get_next_drawable_texture")
-public func windowGetNextDrawableTexture(_ win: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+public func windowGetNextDrawableTexture(_ win: UnsafeMutableRawPointer?)
+    -> UnsafeMutableRawPointer?
+{
     guard let win else { return nil }
     let state = stateFrom(win)
 
     guard let drawablePtr = state.metalView.getNextDrawable() else { return nil }
-    let drawable = Unmanaged<AnyObject>.fromOpaque(drawablePtr)
+    let drawable =
+        Unmanaged<AnyObject>.fromOpaque(drawablePtr)
         .takeRetainedValue() as! CAMetalDrawable
     state.currentDrawable = drawable
 
@@ -335,7 +337,8 @@ public func windowGetNextDrawableTexture(_ win: UnsafeMutableRawPointer?) -> Uns
         let h = drawableTexture.height
 
         if let existing = state.offscreenTexture,
-           existing.width == w, existing.height == h {
+            existing.width == w, existing.height == h
+        {
             return Unmanaged.passUnretained(existing as AnyObject).toOpaque()
         }
 
@@ -413,7 +416,9 @@ public func windowGetScale(_ win: UnsafeMutableRawPointer?) -> Double {
 // MARK: - Property setters
 
 @_cdecl("window_set_title")
-public func windowSetTitle(_ win: UnsafeMutableRawPointer?, _ title: UnsafePointer<UInt8>?, _ titleLen: Int) {
+public func windowSetTitle(
+    _ win: UnsafeMutableRawPointer?, _ title: UnsafePointer<UInt8>?, _ titleLen: Int
+) {
     guard let win, let titleStr = decodeUtf8(title, titleLen) else { return }
     stateFrom(win).window.title = titleStr
 }
@@ -468,7 +473,9 @@ public func windowSetResizable(_ win: UnsafeMutableRawPointer?, _ resizable: Boo
 // MARK: - Property getters
 
 @_cdecl("window_get_title")
-public func windowGetTitle(_ win: UnsafeMutableRawPointer?, _ buf: UnsafeMutablePointer<UInt8>?, _ bufLen: Int) -> Int {
+public func windowGetTitle(
+    _ win: UnsafeMutableRawPointer?, _ buf: UnsafeMutablePointer<UInt8>?, _ bufLen: Int
+) -> Int {
     guard let win else { return 0 }
     let bytes = Array(stateFrom(win).window.title.utf8)
     guard let buf, bufLen > 0 else { return bytes.count }
@@ -483,13 +490,13 @@ public func windowGetTitle(_ win: UnsafeMutableRawPointer?, _ buf: UnsafeMutable
 @_cdecl("window_get_width")
 public func windowGetWidth(_ win: UnsafeMutableRawPointer?) -> Int32 {
     guard let win else { return 0 }
-    return stateFrom(win).metalView.drawableWidth
+    return Int32(stateFrom(win).metalView.bounds.width)
 }
 
 @_cdecl("window_get_height")
 public func windowGetHeight(_ win: UnsafeMutableRawPointer?) -> Int32 {
     guard let win else { return 0 }
-    return stateFrom(win).metalView.drawableHeight
+    return Int32(stateFrom(win).metalView.bounds.height)
 }
 
 @_cdecl("window_get_close_button_visible")
