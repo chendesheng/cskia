@@ -7,16 +7,7 @@ final class WindowTests: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
-        let root = SnapshotHelper.projectRoot
-        app = XCUIApplication()
-        app.launchArguments = [
-            "run", "--allow-ffi", "--allow-read", "--allow-env", "--unstable-ffi",
-            root + "/tests/apps/color_app.ts",
-        ]
-        app.launch()
-
-        let window = app.windows.firstMatch
-        XCTAssertTrue(window.waitForExistence(timeout: 10), "Window should appear")
+        app = TestHelper.launchApp("color_app.ts")
     }
 
     override func tearDown() {

@@ -4,14 +4,8 @@ import SnapshotTesting
 
 enum SnapshotHelper {
 
-    static let projectRoot: String = {
-        var url = URL(fileURLWithPath: #filePath)
-        for _ in 0..<3 { url.deleteLastPathComponent() }
-        return url.path
-    }()
-
     static let baselineDir: String = {
-        projectRoot + "/tests/__snapshots__"
+        TestHelper.projectRoot + "/tests/__snapshots__"
     }()
 
     static let outputDir: String = {

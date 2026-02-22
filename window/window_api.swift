@@ -313,31 +313,95 @@ public func windowSetOnRender(_ win: UnsafeMutableRawPointer?, _ cb: VoidCallbac
 
 // MARK: - Frame
 
-@_cdecl("window_get_next_drawable")
-public func windowGetNextDrawable(_ win: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+@_cdecl("window_set_preserve_drawing_buffer")
+public func windowSetPreserveDrawingBuffer(_ win: UnsafeMutableRawPointer?, _ flag: Bool) {
+    guard let win else { return }
+    stateFrom(win).preserveDrawingBuffer = flag
+}
+
+@_cdecl("window_get_next_drawable_texture")
+public func windowGetNextDrawableTexture(_ win: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let win else { return nil }
-    return stateFrom(win).metalView.getNextDrawable()
-}
+    let state = stateFrom(win)
 
-@_cdecl("drawable_get_texture")
-public func drawableGetTexture(_ drawablePtr: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
-    guard let drawablePtr else { return nil }
-    let drawable = Unmanaged<AnyObject>.fromOpaque(drawablePtr)
-        .takeUnretainedValue() as! CAMetalDrawable
-    return Unmanaged.passUnretained(drawable.texture as AnyObject).toOpaque()
-}
-
-@_cdecl("present_drawable")
-public func presentDrawable(_ queuePtr: UnsafeMutableRawPointer?, _ drawablePtr: UnsafeMutableRawPointer?) {
-    guard let queuePtr, let drawablePtr else { return }
-    let queue = Unmanaged<AnyObject>.fromOpaque(queuePtr)
-        .takeUnretainedValue() as! MTLCommandQueue
+    guard let drawablePtr = state.metalView.getNextDrawable() else { return nil }
     let drawable = Unmanaged<AnyObject>.fromOpaque(drawablePtr)
         .takeRetainedValue() as! CAMetalDrawable
-    if let cmd = queue.makeCommandBuffer() {
-        cmd.present(drawable)
-        cmd.commit()
+    state.currentDrawable = drawable
+
+    if state.preserveDrawingBuffer {
+        let drawableTexture = drawable.texture
+        let w = drawableTexture.width
+        let h = drawableTexture.height
+
+        if let existing = state.offscreenTexture,
+           existing.width == w, existing.height == h {
+            return Unmanaged.passUnretained(existing as AnyObject).toOpaque()
+        }
+
+        let desc = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .bgra8Unorm,
+            width: w,
+            height: h,
+            mipmapped: false
+        )
+        desc.usage = [.renderTarget, .shaderRead]
+        desc.storageMode = .private
+        guard let tex = AppState.shared.metalDevice.makeTexture(descriptor: desc) else {
+            return Unmanaged.passUnretained(drawableTexture as AnyObject).toOpaque()
+        }
+        state.offscreenTexture = tex
+        return Unmanaged.passUnretained(tex as AnyObject).toOpaque()
+    } else {
+        // Clear the drawable to match WebGL's preserveDrawingBuffer:false behavior
+        // (drawable textures retain content from their last use in Metal's swapchain pool)
+        let queue = AppState.shared.commandQueue
+        if let cmd = queue.makeCommandBuffer() {
+            let rpd = MTLRenderPassDescriptor()
+            rpd.colorAttachments[0].texture = drawable.texture
+            rpd.colorAttachments[0].loadAction = .clear
+            rpd.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+            rpd.colorAttachments[0].storeAction = .store
+            if let encoder = cmd.makeRenderCommandEncoder(descriptor: rpd) {
+                encoder.endEncoding()
+            }
+            cmd.commit()
+        }
+        return Unmanaged.passUnretained(drawable.texture as AnyObject).toOpaque()
     }
+}
+
+@_cdecl("window_present_drawable")
+public func windowPresentDrawable(_ win: UnsafeMutableRawPointer?) {
+    guard let win else { return }
+    let state = stateFrom(win)
+    guard let drawable = state.currentDrawable else { return }
+    let queue = AppState.shared.commandQueue
+
+    guard let cmd = queue.makeCommandBuffer() else {
+        state.currentDrawable = nil
+        return
+    }
+
+    if state.preserveDrawingBuffer, let offscreen = state.offscreenTexture {
+        let blit = cmd.makeBlitCommandEncoder()!
+        let w = min(offscreen.width, drawable.texture.width)
+        let h = min(offscreen.height, drawable.texture.height)
+        blit.copy(
+            from: offscreen,
+            sourceSlice: 0, sourceLevel: 0,
+            sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+            sourceSize: MTLSize(width: w, height: h, depth: 1),
+            to: drawable.texture,
+            destinationSlice: 0, destinationLevel: 0,
+            destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0)
+        )
+        blit.endEncoding()
+    }
+
+    cmd.present(drawable)
+    cmd.commit()
+    state.currentDrawable = nil
 }
 
 @_cdecl("window_get_scale")

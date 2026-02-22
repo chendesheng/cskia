@@ -19,7 +19,7 @@ final class MetalView: NSView {
         let layer = CAMetalLayer()
         layer.device          = device
         layer.pixelFormat     = .bgra8Unorm
-        layer.framebufferOnly = false
+        layer.framebufferOnly = true
         layer.isOpaque        = true
 
         metalLayer = layer

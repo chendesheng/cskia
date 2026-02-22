@@ -130,7 +130,6 @@ export class Window extends EventTarget {
   #setupCallbacks(): void {
     const ptr = this.#ptr;
     const sym = winLib.symbols;
-    const queue = Application.shared.metalQueue;
 
     this.#callbacks.push(
       setOnMouseDown(ptr, (mods, button, x, y) => {
@@ -179,21 +178,17 @@ export class Window extends EventTarget {
         );
       }),
       setOnRender(ptr, () => {
-        const drawable = sym.window_get_next_drawable(ptr);
-        if (!drawable) return;
-        try {
-          const width = sym.window_get_width(ptr) as number;
-          const height = sym.window_get_height(ptr) as number;
-          const scale = sym.window_get_scale(ptr) as number;
-          const texture = sym.drawable_get_texture(drawable);
-          this.dispatchEvent(
-            new CustomEvent("render", {
-              detail: { texture, width, height, scale },
-            }),
-          );
-        } finally {
-          sym.present_drawable(queue, drawable);
-        }
+        const texture = sym.window_get_next_drawable_texture(ptr);
+        if (!texture) return;
+        const width = sym.window_get_width(ptr) as number;
+        const height = sym.window_get_height(ptr) as number;
+        const scale = sym.window_get_scale(ptr) as number;
+        this.dispatchEvent(
+          new CustomEvent("render", {
+            detail: { texture, width, height, scale },
+          }),
+        );
+        sym.window_present_drawable(ptr);
       }),
     );
   }
@@ -209,6 +204,10 @@ export class Window extends EventTarget {
   }
 
   // --- Properties ---
+
+  set preserveDrawingBuffer(v: boolean) {
+    winLib.symbols.window_set_preserve_drawing_buffer(this.#ptr, v);
+  }
 
   get width(): number {
     return winLib.symbols.window_get_width(this.#ptr) as number;

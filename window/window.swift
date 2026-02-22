@@ -60,6 +60,10 @@ final class WindowState: NSObject, NSWindowDelegate {
     var onWindowResize: ResizeCallback?
     var onRender: VoidCallback?
 
+    var preserveDrawingBuffer: Bool = false
+    var offscreenTexture: MTLTexture? = nil
+    var currentDrawable: CAMetalDrawable? = nil
+
     init(window: NSWindow, metalView: MetalView) {
         self.window    = window
         self.metalView = metalView
