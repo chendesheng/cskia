@@ -30,6 +30,8 @@ export type MouseEventDetail = {
   x: number;
   y: number;
   button: number;
+  buttons: number;
+  clickCount: number;
   ctrlKey: boolean;
   shiftKey: boolean;
   altKey: boolean;
@@ -120,24 +122,24 @@ export class Window extends EventTarget {
     const sym = winLib.symbols;
 
     this.#callbacks.push(
-      setOnMouseDown(ptr, (mods, button, x, y) => {
-        const detail = { ...mods, button, x, y };
+      setOnMouseDown(ptr, (mods, button, x, y, clickCount, buttons) => {
+        const detail = { ...mods, button, buttons, clickCount, x, y };
         this.dispatchEvent(new CustomEvent("mousedown", { detail }));
         if (button === 1) {
           this.dispatchEvent(new CustomEvent("contextmenu", { detail }));
         }
       }),
-      setOnMouseUp(ptr, (mods, button, x, y) => {
+      setOnMouseUp(ptr, (mods, button, x, y, clickCount, buttons) => {
         this.dispatchEvent(
           new CustomEvent("mouseup", {
-            detail: { ...mods, button, x, y },
+            detail: { ...mods, button, buttons, clickCount, x, y },
           }),
         );
       }),
-      setOnMouseMove(ptr, (mods, button, x, y) => {
+      setOnMouseMove(ptr, (mods, button, x, y, clickCount, buttons) => {
         this.dispatchEvent(
           new CustomEvent("mousemove", {
-            detail: { ...mods, button, x, y },
+            detail: { ...mods, button, buttons, clickCount, x, y },
           }),
         );
       }),
@@ -178,7 +180,7 @@ export class Window extends EventTarget {
       setOnWheel(ptr, (mods, button, x, y, deltaX, deltaY) => {
         this.dispatchEvent(
           new CustomEvent("wheel", {
-            detail: { ...mods, button, x, y, deltaX, deltaY },
+            detail: { ...mods, button, buttons: 0, clickCount: 0, x, y, deltaX, deltaY },
           }),
         );
       }),

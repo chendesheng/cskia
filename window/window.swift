@@ -10,7 +10,7 @@ import MetalKit
 
 // MARK: - Callback typedefs
 
-public typealias MouseCallback    = @convention(c) (UInt32, Int32, Double, Double) -> Void
+public typealias MouseCallback    = @convention(c) (UInt32, Int32, Double, Double, Int32, UInt32) -> Void
 public typealias KeyCallback      = @convention(c) (UInt32, UInt16, UInt8, Int32, UInt32) -> Void
 public typealias VoidCallback     = @convention(c) () -> Void
 public typealias ResizeCallback   = @convention(c) (Int32, Int32) -> Void

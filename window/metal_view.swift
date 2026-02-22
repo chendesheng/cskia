@@ -60,24 +60,24 @@ final class MetalView: MTKView {
     // MARK: Mouse events
 
     private func fireMouseDown(_ event: NSEvent) {
-        let (mods, button, x, y) = mouseParams(event)
-        state.onMouseDown?(mods, button, x, y)
+        let (mods, button, x, y, clickCount, buttons) = mouseParams(event)
+        state.onMouseDown?(mods, button, x, y, clickCount, buttons)
     }
 
     private func fireMouseUp(_ event: NSEvent) {
-        let (mods, button, x, y) = mouseParams(event)
-        state.onMouseUp?(mods, button, x, y)
+        let (mods, button, x, y, clickCount, buttons) = mouseParams(event)
+        state.onMouseUp?(mods, button, x, y, clickCount, buttons)
     }
 
     private func fireMouseMove(_ event: NSEvent) {
-        let (mods, button, x, y) = mouseParams(event)
-        state.onMouseMove?(mods, button, x, y)
+        let (mods, button, x, y, clickCount, buttons) = mouseParams(event)
+        state.onMouseMove?(mods, button, x, y, clickCount, buttons)
     }
 
-    private func mouseParams(_ event: NSEvent) -> (UInt32, Int32, Double, Double) {
+    private func mouseParams(_ event: NSEvent) -> (UInt32, Int32, Double, Double, Int32, UInt32) {
         let p = convert(event.locationInWindow, from: nil)
         let flippedY = bounds.height - p.y
-        return (modifierBits(from: event.modifierFlags), Int32(event.buttonNumber), p.x, flippedY)
+        return (modifierBits(from: event.modifierFlags), Int32(event.buttonNumber), p.x, flippedY, Int32(event.clickCount), UInt32(NSEvent.pressedMouseButtons))
     }
 
     override func mouseDown(with event: NSEvent)      { fireMouseDown(event) }
@@ -96,7 +96,7 @@ final class MetalView: MTKView {
     // MARK: Scroll wheel
 
     override func scrollWheel(with event: NSEvent) {
-        let (mods, button, x, y) = mouseParams(event)
+        let (mods, button, x, y, _, _) = mouseParams(event)
         state.onWheel?(mods, button, x, y, -event.scrollingDeltaX, -event.scrollingDeltaY)
     }
 

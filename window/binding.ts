@@ -329,6 +329,8 @@ export type MouseHandler = (
   button: number,
   x: number,
   y: number,
+  clickCount: number,
+  buttons: number,
 ) => void;
 
 export type KeyHandler = (
@@ -348,7 +350,7 @@ export type WheelHandler = (
 ) => void;
 
 const MOUSE_CB_DEF = {
-  parameters: ["u32", "i32", "f64", "f64"],
+  parameters: ["u32", "i32", "f64", "f64", "i32", "u32"],
   result: "void",
 } as const;
 
@@ -387,8 +389,8 @@ type RenderCb = Deno.UnsafeCallback<typeof RENDER_CB_DEF>;
 function makeMouseCb(handler: MouseHandler): MouseCb {
   return new Deno.UnsafeCallback(
     MOUSE_CB_DEF,
-    (modBits: number, button: number, x: number, y: number) => {
-      handler(decodeModifiers(modBits), button, x, y);
+    (modBits: number, button: number, x: number, y: number, clickCount: number, buttons: number) => {
+      handler(decodeModifiers(modBits), button, x, y, clickCount, buttons);
     },
   );
 }
