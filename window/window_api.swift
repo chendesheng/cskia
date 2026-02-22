@@ -210,7 +210,6 @@ public func appPollEvents() {
         ) {
             NSApp.sendEvent(event)
         }
-        CFRunLoopRunInMode(.defaultMode, 1.0 / 60.0, false)
     }
 }
 
