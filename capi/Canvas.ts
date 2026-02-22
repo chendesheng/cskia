@@ -1,5 +1,6 @@
 import { skLib, toF32Bytes } from "./binding.ts";
 import type { Color4f } from "./Color.ts";
+import type { Matrix3x3 } from "./Matrix.ts";
 import type { Paint } from "./Paint.ts";
 import { Path } from "./Path.ts";
 import type { Paragraph } from "./Paragraph.ts";
@@ -72,14 +73,14 @@ export class Canvas {
     sk.sk_canvas_skew(this.#ptr, sx, sy);
   }
 
-  concat(matrix: Float32Array): void {
+  concat(matrix: Matrix3x3): void {
     sk.sk_canvas_concat(this.#ptr, toF32Bytes(matrix));
   }
 
-  getTotalMatrix(): number[] {
+  getTotalMatrix(): Matrix3x3 {
     const buf = new Float32Array(9);
     sk.sk_canvas_get_total_matrix(this.#ptr, toF32Bytes(buf));
-    return Array.from(buf);
+    return buf;
   }
 
   drawPath(path: Path, paint: Paint): void {

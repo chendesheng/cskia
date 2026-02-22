@@ -1,4 +1,5 @@
 import { asFfiBuffer, encodeUtf8, skLib, toF32Bytes } from "./binding.ts";
+import type { Matrix3x3 } from "./Matrix.ts";
 
 const sk = skLib.symbols;
 
@@ -561,7 +562,7 @@ export class Path {
     return str;
   }
 
-  transform(matrix: Float32Array | number[]): Path {
+  transform(matrix: Matrix3x3): Path {
     sk.sk_path_transform(this._ptr, toF32Bytes(matrix));
     return this;
   }
