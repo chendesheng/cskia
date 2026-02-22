@@ -201,7 +201,17 @@ public func appFinishLaunching() {
 @_cdecl("app_poll_events")
 public func appPollEvents() {
     appFinishLaunching()
-    CFRunLoopRunInMode(.defaultMode, 1.0 / 60.0, false)
+    autoreleasepool {
+        while let event = NSApp.nextEvent(
+            matching: .any,
+            until: .distantPast,
+            inMode: .default,
+            dequeue: true
+        ) {
+            NSApp.sendEvent(event)
+        }
+        CFRunLoopRunInMode(.defaultMode, 1.0 / 60.0, false)
+    }
 }
 
 @_cdecl("app_quit")
