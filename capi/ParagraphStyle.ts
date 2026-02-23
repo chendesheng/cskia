@@ -1,4 +1,4 @@
-import { skLib, skStringNew } from "./binding.ts";
+import { encodeUtf8, skLib } from "./binding.ts";
 import { TextStyle, type TextStyleOptions } from "./TextStyle.ts";
 
 const sk = skLib.symbols;
@@ -52,12 +52,8 @@ export class ParagraphStyle {
   }
 
   setEllipsis(ellipsis: string): void {
-    const ptr = skStringNew(ellipsis);
-    try {
-      sk.sk_paragraph_style_set_ellipsis(this.#ptr, ptr);
-    } finally {
-      sk.sk_string_delete(ptr);
-    }
+    const bytes = encodeUtf8(ellipsis);
+    sk.sk_paragraph_style_set_ellipsis(this.#ptr, bytes, BigInt(bytes.length));
   }
 
   setHeight(height: number): void {
