@@ -14,15 +14,65 @@ const args = parseArgs(Deno.args, {
   default: { update: false },
 });
 
+const fixturesDir = "tests/fixtures";
+const projectSpec = "tests/fixtures/project.yml";
+const projectFile = "tests/fixtures/SkiaWindowTests.xcodeproj";
+
 const filter = args._.length > 0 ? String(args._[0]) : null;
 
 const containerSnapDir =
   "~/Library/Containers/com.skiawindow.testapp.uitests.xctrunner/Data/tmp/skiawindow_snapshots";
 
-const clean = new Deno.Command("bash", {
-  args: ["-c", `rm -rf ${containerSnapDir}`],
-});
-await clean.output();
+function runCommand(
+  command: string,
+  args: string[],
+  cwd?: string,
+): Promise<Deno.CommandOutput> {
+  return new Deno.Command(command, {
+    args,
+    cwd,
+    stdout: "inherit",
+    stderr: "inherit",
+  }).output();
+}
+
+async function ensureXcodeProject(): Promise<void> {
+  try {
+    await Deno.stat(projectSpec);
+  } catch {
+    console.error(`UI test project spec not found: ${projectSpec}`);
+    Deno.exit(1);
+  }
+
+  let generateResult: Deno.CommandOutput;
+  try {
+    console.log(`Generating XCTest project from ${projectSpec}...`);
+    generateResult = await runCommand("xcodegen", ["generate"], fixturesDir);
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      console.error(
+        "xcodegen is required for UI tests. Install with: brew install xcodegen",
+      );
+      Deno.exit(1);
+    }
+    throw error;
+  }
+
+  if (generateResult.code !== 0) {
+    console.error("Failed to generate XCTest project via xcodegen.");
+    Deno.exit(generateResult.code);
+  }
+
+  try {
+    await Deno.stat(projectFile);
+  } catch {
+    console.error(`xcodegen succeeded but project is missing: ${projectFile}`);
+    Deno.exit(1);
+  }
+}
+
+await ensureXcodeProject();
+await runCommand("bash", ["-c", `rm -rf ${containerSnapDir}`]);
 
 const xcodebuildArgs = [
   "test",
