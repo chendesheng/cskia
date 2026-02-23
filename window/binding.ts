@@ -4,12 +4,36 @@
 
 import { dirname, fromFileUrl, join } from "jsr:@std/path@^1";
 
-const libDir = join(
-  dirname(fromFileUrl(import.meta.url)),
-  "..",
-  ".build",
-  "release",
-);
+function pathExists(path: string): boolean {
+  try {
+    Deno.statSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveNativeLibDir(): string {
+  const fileName = "libWindow.dylib";
+  const compiledDir = dirname(Deno.execPath());
+  const devDir = join(
+    dirname(fromFileUrl(import.meta.url)),
+    "..",
+    ".build",
+    "release",
+  );
+  const candidates = [compiledDir, devDir];
+
+  for (const dir of candidates) {
+    if (pathExists(join(dir, fileName))) return dir;
+  }
+
+  throw new Error(
+    `Could not find ${fileName}. Checked: ${candidates.map((c) => join(c, fileName)).join(", ")}`,
+  );
+}
+
+const libDir = resolveNativeLibDir();
 const libPath = join(libDir, "libWindow.dylib");
 
 const utf8Encoder = new TextEncoder();

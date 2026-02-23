@@ -4,7 +4,36 @@
 
 import { join, dirname, fromFileUrl } from "jsr:@std/path@^1";
 
-const libDir = join(dirname(fromFileUrl(import.meta.url)), "..", ".build", "release");
+function pathExists(path: string): boolean {
+  try {
+    Deno.statSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveNativeLibDir(): string {
+  const fileName = "libCSkia.dylib";
+  const compiledDir = dirname(Deno.execPath());
+  const devDir = join(
+    dirname(fromFileUrl(import.meta.url)),
+    "..",
+    ".build",
+    "release",
+  );
+  const candidates = [compiledDir, devDir];
+
+  for (const dir of candidates) {
+    if (pathExists(join(dir, fileName))) return dir;
+  }
+
+  throw new Error(
+    `Could not find ${fileName}. Checked: ${candidates.map((c) => join(c, fileName)).join(", ")}`,
+  );
+}
+
+const libDir = resolveNativeLibDir();
 const libPath = join(libDir, "libCSkia.dylib");
 
 const utf8Encoder = new TextEncoder();
@@ -246,7 +275,7 @@ export const skLib = Deno.dlopen(libPath, {
     result: "void",
   },
   sk_paragraph_style_set_ellipsis: {
-    parameters: ["pointer", "pointer"],
+    parameters: ["pointer", "buffer", "usize"],
     result: "void",
   },
   sk_paragraph_style_set_height: {
