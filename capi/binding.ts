@@ -187,12 +187,55 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: [],
     result: "pointer",
   },
+  sk_text_style_new_with_options: {
+    parameters: [
+      "u64",
+      "u32",
+      "f32",
+      "f32",
+      "bool",
+      "f32",
+      "f32",
+      "i32",
+      "i32",
+      "i32",
+      "i32",
+      "i32",
+      "i32",
+      "u32",
+      "f32",
+      "buffer",
+      "usize",
+      "pointer",
+    ],
+    result: "pointer",
+  },
+  sk_text_style_delete: {
+    parameters: ["pointer"],
+    result: "void",
+  },
+  sk_text_style_get_color: {
+    parameters: ["pointer"],
+    result: "u32",
+  },
   sk_text_style_set_color: {
     parameters: ["pointer", "u32"],
     result: "void",
   },
+  sk_text_style_get_font_size: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
   sk_text_style_set_font_size: {
     parameters: ["pointer", "f32"],
+    result: "void",
+  },
+  sk_text_style_get_font_families: {
+    parameters: ["pointer", "buffer"],
+    result: "pointer",
+  },
+  sk_text_style_destroy_font_families: {
+    parameters: ["pointer", "usize"],
     result: "void",
   },
   sk_text_style_set_font_families: {
@@ -211,6 +254,18 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: ["pointer", "i32", "i32", "u32", "i32", "f32"],
     result: "void",
   },
+  sk_text_style_set_decoration_type: {
+    parameters: ["pointer", "i32"],
+    result: "void",
+  },
+  sk_text_style_set_decoration_style: {
+    parameters: ["pointer", "i32"],
+    result: "void",
+  },
+  sk_text_style_set_decoration_thickness_multiplier: {
+    parameters: ["pointer", "f32"],
+    result: "void",
+  },
   sk_text_style_set_decoration_color: {
     parameters: ["pointer", "u32"],
     result: "void",
@@ -219,37 +274,97 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: ["i32", "i32", "i32"],
     result: "pointer",
   },
+  sk_fontstyle_get_weight: {
+    parameters: ["pointer"],
+    result: "i32",
+  },
+  sk_fontstyle_get_width: {
+    parameters: ["pointer"],
+    result: "i32",
+  },
+  sk_fontstyle_get_slant: {
+    parameters: ["pointer"],
+    result: "i32",
+  },
   sk_text_style_set_fontstyle: {
     parameters: ["pointer", "pointer"],
     result: "void",
+  },
+  sk_text_style_get_fontstyle: {
+    parameters: ["pointer"],
+    result: "pointer",
+  },
+  sk_text_style_get_height: {
+    parameters: ["pointer"],
+    result: "f32",
   },
   sk_text_style_set_height: {
     parameters: ["pointer", "f32"],
     result: "void",
   },
+  sk_text_style_get_height_override: {
+    parameters: ["pointer"],
+    result: "bool",
+  },
   sk_text_style_set_height_override: {
     parameters: ["pointer", "bool"],
     result: "void",
+  },
+  sk_text_style_get_half_leading: {
+    parameters: ["pointer"],
+    result: "bool",
   },
   sk_text_style_set_half_leading: {
     parameters: ["pointer", "bool"],
     result: "void",
   },
+  sk_text_style_get_letter_spacing: {
+    parameters: ["pointer"],
+    result: "f32",
+  },
   sk_text_style_set_letter_spacing: {
     parameters: ["pointer", "f32"],
     result: "void",
+  },
+  sk_text_style_get_word_spacing: {
+    parameters: ["pointer"],
+    result: "f32",
   },
   sk_text_style_set_word_spacing: {
     parameters: ["pointer", "f32"],
     result: "void",
   },
+  sk_text_style_get_locale: {
+    parameters: ["pointer"],
+    result: "pointer",
+  },
   sk_text_style_set_locale: {
     parameters: ["pointer", "pointer"],
     result: "void",
   },
+  sk_text_style_get_text_baseline: {
+    parameters: ["pointer"],
+    result: "i32",
+  },
   sk_text_style_set_text_baseline: {
     parameters: ["pointer", "i32"],
     result: "void",
+  },
+  sk_text_style_get_decoration_type: {
+    parameters: ["pointer"],
+    result: "i32",
+  },
+  sk_text_style_get_decoration_style: {
+    parameters: ["pointer"],
+    result: "i32",
+  },
+  sk_text_style_get_decoration_color: {
+    parameters: ["pointer"],
+    result: "u32",
+  },
+  sk_text_style_get_decoration_thickness_multiplier: {
+    parameters: ["pointer"],
+    result: "f32",
   },
 
   // --- Paragraph style ---
@@ -258,25 +373,53 @@ export const skLib = Deno.dlopen(libPath, {
     parameters: [],
     result: "pointer",
   },
+  sk_paragraph_style_new_with_options: {
+    parameters: ["u64", "i32", "i32", "usize", "f32", "buffer", "usize", "pointer"],
+    result: "pointer",
+  },
+  sk_paragraph_style_get_text_style_copy: {
+    parameters: ["pointer"],
+    result: "pointer",
+  },
   sk_paragraph_style_set_text_style: {
     parameters: ["pointer", "pointer"],
     result: "void",
+  },
+  sk_paragraph_style_get_text_align: {
+    parameters: ["pointer"],
+    result: "i32",
   },
   sk_paragraph_style_set_text_align: {
     parameters: ["pointer", "i32"],
     result: "void",
   },
+  sk_paragraph_style_get_text_direction: {
+    parameters: ["pointer"],
+    result: "i32",
+  },
   sk_paragraph_style_set_text_direction: {
     parameters: ["pointer", "i32"],
     result: "void",
+  },
+  sk_paragraph_style_get_max_lines: {
+    parameters: ["pointer"],
+    result: "usize",
   },
   sk_paragraph_style_set_max_lines: {
     parameters: ["pointer", "usize"],
     result: "void",
   },
+  sk_paragraph_style_get_ellipsis: {
+    parameters: ["pointer"],
+    result: "pointer",
+  },
   sk_paragraph_style_set_ellipsis: {
     parameters: ["pointer", "buffer", "usize"],
     result: "void",
+  },
+  sk_paragraph_style_get_height: {
+    parameters: ["pointer"],
+    result: "f32",
   },
   sk_paragraph_style_set_height: {
     parameters: ["pointer", "f32"],
@@ -375,6 +518,10 @@ export const skLib = Deno.dlopen(libPath, {
   },
   sk_paragraph_paint: {
     parameters: ["pointer", "pointer", "f32", "f32"],
+    result: "void",
+  },
+  sk_paragraph_delete: {
+    parameters: ["pointer"],
     result: "void",
   },
 

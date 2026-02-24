@@ -165,7 +165,6 @@ export class Paragraph {
   }
 
   delete(): void {
-    // Paragraph lifecycle is managed by the builder in the C API;
-    // no separate delete symbol is currently exposed.
+    sk.sk_paragraph_delete(this.#ptr);
   }
 }

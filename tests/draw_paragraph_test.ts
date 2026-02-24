@@ -21,12 +21,13 @@ Deno.test("draw paragraph", async (t) => {
       fontFamilies: ["Roboto"],
     });
     const ps = new ParagraphStyle({ textStyle: ts });
-    const builder = ParagraphBuilder.Make(ps, fontCollection);
+    const builder = new ParagraphBuilder(ps, fontCollection);
     builder.pushStyle(ts);
     builder.addText("Hello, Skia!");
     const para = builder.build();
     para.layout(280);
     canvas.drawParagraph(para, 10, 10);
+    para.delete();
     builder.delete();
     ps.delete();
     ts.delete();

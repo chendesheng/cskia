@@ -1493,6 +1493,10 @@ typedef struct {
 
 // paragraph style
 SK_C_API sk_paragraph_style_t *sk_paragraph_style_new();
+SK_C_API sk_paragraph_style_t *sk_paragraph_style_new_with_options(
+    uint64_t flags, sk_text_align_t text_align,
+    sk_text_direction_t text_direction, size_t max_lines, float height,
+    const char *ellipsis, size_t ellipsis_length, sk_text_style_t *text_style);
 SK_C_API void sk_paragraph_style_delete(sk_paragraph_style_t *style);
 SK_C_API const sk_strut_style_t *
 sk_paragraph_style_get_strut_style(sk_paragraph_style_t *style);
@@ -1505,6 +1509,8 @@ sk_paragraph_style_set_text_direction(sk_paragraph_style_t *style,
                                       sk_text_direction_t direction);
 SK_C_API const sk_text_style_t *
 sk_paragraph_style_get_text_style(sk_paragraph_style_t *style);
+SK_C_API sk_text_style_t *
+sk_paragraph_style_get_text_style_copy(sk_paragraph_style_t *style);
 SK_C_API void sk_paragraph_style_set_text_style(sk_paragraph_style_t *style,
                                                 sk_text_style_t *textStyle);
 SK_C_API sk_text_align_t
@@ -1606,6 +1612,7 @@ SK_C_API void sk_font_collection_clear_caches(sk_font_collection_t *collection);
 SK_C_API void sk_paragraph_layout(sk_paragraph_t *paragraph, float width);
 SK_C_API void sk_paragraph_paint(sk_paragraph_t *paragraph, sk_canvas_t *canvas,
                                  float x, float y);
+SK_C_API void sk_paragraph_delete(sk_paragraph_t *paragraph);
 SK_C_API float sk_paragraph_get_max_width(sk_paragraph_t *paragraph);
 SK_C_API float sk_paragraph_get_height(sk_paragraph_t *paragraph);
 SK_C_API float sk_paragraph_get_min_intrinsic_width(sk_paragraph_t *paragraph);
@@ -1720,6 +1727,15 @@ SK_C_API bool sk_text_wrapper_exceeded_max_lines(sk_text_wrapper_t *wrapper);
 
 // text style
 SK_C_API const sk_text_style_t *sk_text_style_create();
+SK_C_API sk_text_style_t *sk_text_style_new_with_options(
+    uint64_t flags, sk_color_t color, float font_size, float height_multiplier,
+    bool half_leading, float letter_spacing, float word_spacing,
+    sk_text_baseline_t text_baseline, int font_weight, int font_width,
+    int font_slant, sk_text_decoration_t decoration_type,
+    sk_text_decoration_style_t decoration_style, sk_color_t decoration_color,
+    float decoration_thickness, const sk_string_t **font_families,
+    size_t font_family_count, const sk_string_t *locale);
+SK_C_API void sk_text_style_delete(sk_text_style_t *style);
 SK_C_API sk_text_style_t *
 sk_text_style_clone_for_placeholder(sk_text_style_t *style);
 SK_C_API sk_color_t sk_text_style_get_color(sk_text_style_t *style);
@@ -1788,6 +1804,8 @@ SK_C_API bool sk_text_style_is_placeholder(sk_text_style_t *style);
 SK_C_API void sk_text_style_set_placeholder(sk_text_style_t *style);
 SK_C_API sk_string_t **sk_text_style_get_font_families(sk_text_style_t *style,
                                                        size_t *count);
+SK_C_API void sk_text_style_destroy_font_families(sk_string_t **families,
+                                                  size_t count);
 SK_C_API void sk_text_style_set_font_families(sk_text_style_t *style,
                                               const sk_string_t **fontFamilies,
                                               size_t count);

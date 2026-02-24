@@ -8,8 +8,10 @@ const sk = skLib.symbols;
 
 /** Pack sk_paragraph_placeholder_style_t {f32, f32, i32, i32, f32} = 20 bytes */
 function packPlaceholderStyle(
-  width: number, height: number,
-  alignment: number, baseline: number,
+  width: number,
+  height: number,
+  alignment: number,
+  baseline: number,
   baselineOffset: number,
 ): Uint8Array<ArrayBuffer> {
   const buf = new ArrayBuffer(20);
@@ -25,21 +27,15 @@ function packPlaceholderStyle(
 export class ParagraphBuilder {
   #ptr: Deno.PointerValue;
 
-  private constructor(ptr: Deno.PointerValue) {
-    this.#ptr = ptr;
-  }
-
-  static Make(
+  constructor(
     style: ParagraphStyle,
     fontCollection: FontCollection,
-  ): ParagraphBuilder {
-    const ptr = sk.sk_paragraph_builder_new(style._ptr, fontCollection._ptr);
-    return new ParagraphBuilder(ptr);
+  ) {
+    this.#ptr = sk.sk_paragraph_builder_new(style._ptr, fontCollection._ptr);
   }
 
-  pushStyle(style: TextStyle | TextStyleOptions): void {
-    const ts = style instanceof TextStyle ? style : new TextStyle(style);
-    sk.sk_paragraph_builder_push_style(this.#ptr, ts._ptr);
+  pushStyle(style: TextStyle): void {
+    sk.sk_paragraph_builder_push_style(this.#ptr, style._ptr);
   }
 
   pop(): void {
@@ -51,8 +47,10 @@ export class ParagraphBuilder {
   }
 
   addPlaceholder(
-    width: number, height: number,
-    alignment: number = 0, baseline: number = 0,
+    width: number,
+    height: number,
+    alignment: number = 0,
+    baseline: number = 0,
     baselineOffset: number = 0,
   ): void {
     sk.sk_paragraph_builder_add_placeholder(

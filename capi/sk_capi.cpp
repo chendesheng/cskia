@@ -3052,6 +3052,39 @@ sk_paragraph_style_t *sk_paragraph_style_new() {
   return reinterpret_cast<sk_paragraph_style_t *>(new ParagraphStyle());
 }
 
+sk_paragraph_style_t *sk_paragraph_style_new_with_options(
+    uint64_t flags, sk_text_align_t text_align,
+    sk_text_direction_t text_direction, size_t max_lines, float height,
+    const char *ellipsis, size_t ellipsis_length, sk_text_style_t *text_style) {
+  constexpr uint64_t kParagraphStyleHasTextStyle = 1ull << 0;
+  constexpr uint64_t kParagraphStyleHasTextAlign = 1ull << 1;
+  constexpr uint64_t kParagraphStyleHasTextDirection = 1ull << 2;
+  constexpr uint64_t kParagraphStyleHasMaxLines = 1ull << 3;
+  constexpr uint64_t kParagraphStyleHasEllipsis = 1ull << 4;
+  constexpr uint64_t kParagraphStyleHasHeight = 1ull << 5;
+
+  auto *style = new ParagraphStyle();
+  if (flags & kParagraphStyleHasTextStyle) {
+    style->setTextStyle(*reinterpret_cast<TextStyle *>(text_style));
+  }
+  if (flags & kParagraphStyleHasTextAlign) {
+    style->setTextAlign(to_text_align(text_align));
+  }
+  if (flags & kParagraphStyleHasTextDirection) {
+    style->setTextDirection(to_text_direction(text_direction));
+  }
+  if (flags & kParagraphStyleHasMaxLines) {
+    style->setMaxLines(max_lines);
+  }
+  if (flags & kParagraphStyleHasEllipsis) {
+    style->setEllipsis(SkString(ellipsis ? ellipsis : "", ellipsis_length));
+  }
+  if (flags & kParagraphStyleHasHeight) {
+    style->setHeight(height);
+  }
+  return reinterpret_cast<sk_paragraph_style_t *>(style);
+}
+
 void sk_paragraph_style_delete(sk_paragraph_style_t *style) {
   delete reinterpret_cast<ParagraphStyle *>(style);
 }
@@ -3080,6 +3113,11 @@ void sk_paragraph_style_set_text_direction(sk_paragraph_style_t *style,
 const sk_text_style_t *sk_paragraph_style_get_text_style(sk_paragraph_style_t *style) {
   return reinterpret_cast<const sk_text_style_t *>(
       &reinterpret_cast<ParagraphStyle *>(style)->getTextStyle());
+}
+
+sk_text_style_t *sk_paragraph_style_get_text_style_copy(sk_paragraph_style_t *style) {
+  return reinterpret_cast<sk_text_style_t *>(new TextStyle(
+      reinterpret_cast<ParagraphStyle *>(style)->getTextStyle()));
 }
 
 void sk_paragraph_style_set_text_style(sk_paragraph_style_t *style,
@@ -3329,6 +3367,10 @@ void sk_paragraph_paint(sk_paragraph_t *paragraph,
                         float x,
                         float y) {
   reinterpret_cast<Paragraph *>(paragraph)->paint(reinterpret_cast<SkCanvas *>(canvas), x, y);
+}
+
+void sk_paragraph_delete(sk_paragraph_t *paragraph) {
+  delete reinterpret_cast<Paragraph *>(paragraph);
 }
 
 float sk_paragraph_get_max_width(sk_paragraph_t *paragraph) {
@@ -3700,6 +3742,81 @@ const sk_text_style_t *sk_text_style_create() {
   return reinterpret_cast<const sk_text_style_t *>(new TextStyle());
 }
 
+sk_text_style_t *sk_text_style_new_with_options(
+    uint64_t flags, sk_color_t color, float font_size, float height_multiplier,
+    bool half_leading, float letter_spacing, float word_spacing,
+    sk_text_baseline_t text_baseline, int font_weight, int font_width,
+    int font_slant, sk_text_decoration_t decoration_type,
+    sk_text_decoration_style_t decoration_style, sk_color_t decoration_color,
+    float decoration_thickness, const sk_string_t **font_families,
+    size_t font_family_count, const sk_string_t *locale) {
+  constexpr uint64_t kTextStyleHasColor = 1ull << 0;
+  constexpr uint64_t kTextStyleHasFontSize = 1ull << 1;
+  constexpr uint64_t kTextStyleHasFontFamilies = 1ull << 2;
+  constexpr uint64_t kTextStyleHasHeightMultiplier = 1ull << 3;
+  constexpr uint64_t kTextStyleHasHalfLeading = 1ull << 4;
+  constexpr uint64_t kTextStyleHasLetterSpacing = 1ull << 5;
+  constexpr uint64_t kTextStyleHasWordSpacing = 1ull << 6;
+  constexpr uint64_t kTextStyleHasLocale = 1ull << 7;
+  constexpr uint64_t kTextStyleHasTextBaseline = 1ull << 8;
+  constexpr uint64_t kTextStyleHasFontStyle = 1ull << 9;
+  constexpr uint64_t kTextStyleHasDecorationType = 1ull << 10;
+  constexpr uint64_t kTextStyleHasDecorationColor = 1ull << 11;
+  constexpr uint64_t kTextStyleHasDecorationThickness = 1ull << 12;
+  constexpr uint64_t kTextStyleHasDecorationStyle = 1ull << 13;
+
+  auto *style = new TextStyle();
+  if (flags & kTextStyleHasColor) {
+    style->setColor(color);
+  }
+  if (flags & kTextStyleHasFontSize) {
+    style->setFontSize(font_size);
+  }
+  if (flags & kTextStyleHasFontFamilies) {
+    style->setFontFamilies(to_skstring_vector(font_families, font_family_count));
+  }
+  if (flags & kTextStyleHasHeightMultiplier) {
+    style->setHeight(height_multiplier);
+    style->setHeightOverride(true);
+  }
+  if (flags & kTextStyleHasHalfLeading) {
+    style->setHalfLeading(half_leading);
+  }
+  if (flags & kTextStyleHasLetterSpacing) {
+    style->setLetterSpacing(letter_spacing);
+  }
+  if (flags & kTextStyleHasWordSpacing) {
+    style->setWordSpacing(word_spacing);
+  }
+  if (flags & kTextStyleHasLocale) {
+    style->setLocale(*reinterpret_cast<const SkString *>(locale));
+  }
+  if (flags & kTextStyleHasTextBaseline) {
+    style->setTextBaseline(to_text_baseline(text_baseline));
+  }
+  if (flags & kTextStyleHasFontStyle) {
+    style->setFontStyle(
+        SkFontStyle(font_weight, font_width, (SkFontStyle::Slant)font_slant));
+  }
+  if (flags & kTextStyleHasDecorationType) {
+    style->setDecoration((TextDecoration)decoration_type);
+  }
+  if (flags & kTextStyleHasDecorationColor) {
+    style->setDecorationColor(decoration_color);
+  }
+  if (flags & kTextStyleHasDecorationThickness) {
+    style->setDecorationThicknessMultiplier(decoration_thickness);
+  }
+  if (flags & kTextStyleHasDecorationStyle) {
+    style->setDecorationStyle((TextDecorationStyle)decoration_style);
+  }
+  return reinterpret_cast<sk_text_style_t *>(style);
+}
+
+void sk_text_style_delete(sk_text_style_t *style) {
+  delete reinterpret_cast<TextStyle *>(style);
+}
+
 sk_text_style_t *sk_text_style_clone_for_placeholder(sk_text_style_t *style) {
   return reinterpret_cast<sk_text_style_t *>(
       new TextStyle(reinterpret_cast<TextStyle *>(style)->cloneForPlaceholder()));
@@ -3897,6 +4014,16 @@ void sk_text_style_set_placeholder(sk_text_style_t *style) {
 
 sk_string_t **sk_text_style_get_font_families(sk_text_style_t *style, size_t *count) {
   return to_c_string_array(reinterpret_cast<TextStyle *>(style)->getFontFamilies(), count);
+}
+
+void sk_text_style_destroy_font_families(sk_string_t **families, size_t count) {
+  if (!families) {
+    return;
+  }
+  for (size_t i = 0; i < count; i++) {
+    sk_string_delete(families[i]);
+  }
+  std::free(families);
 }
 
 void sk_text_style_set_font_families(sk_text_style_t *style,
@@ -4196,4 +4323,3 @@ void sk_matrix_skew(float kx, float ky, sk_matrix_t *result) {
   SkMatrix m = SkMatrix::Skew(kx, ky);
   *result = ToMatrix(&m);
 }
-

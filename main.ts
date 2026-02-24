@@ -134,6 +134,7 @@ win.addEventListener("render", (e) => {
 
   grCtx.flush();
 
+  para.delete();
   builder.delete();
   ps.delete();
   ts.delete();
