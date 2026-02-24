@@ -1,5 +1,5 @@
 import { assertAlmostEquals, assertEquals } from "jsr:@std/assert";
-import { Black, Color4f, color4fToColor } from "../capi/Color.ts";
+import { Black, color4fToColor, createColor4f } from "../capi/Color.ts";
 import { ParagraphStyle } from "../capi/ParagraphStyle.ts";
 import { TextStyle } from "../capi/TextStyle.ts";
 
@@ -17,7 +17,7 @@ Deno.test("TextStyle constructor and property wrappers", () => {
     fontStyle: { weight: 500, width: 6, slant: 1 },
     decoration: 1,
     decorationStyle: 2,
-    decorationColor: Color4f(1, 0, 0, 1),
+    decorationColor: createColor4f(1, 0, 0, 1),
     decorationThickness: 1.75,
   });
 
@@ -39,7 +39,7 @@ Deno.test("TextStyle constructor and property wrappers", () => {
   assertAlmostEquals(style.decorationThickness, 1.75, 1e-5);
 
   style.fontSize = 22;
-  style.color = Color4f(0, 1, 0, 1);
+  style.color = createColor4f(0, 1, 0, 1);
   style.heightMultiplier = 1.1;
   style.delete();
 });

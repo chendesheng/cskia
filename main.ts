@@ -122,7 +122,7 @@ win.addEventListener("render", (e) => {
     fontFamilies: ["Helvetica Neue"],
   });
   const ps = new ParagraphStyle({ textStyle: ts });
-  const builder = ParagraphBuilder.Make(ps, fontCollection);
+  const builder = new ParagraphBuilder(ps, fontCollection);
   builder.pushStyle(ts);
 
   const text = eventLogs.length > 0 ? eventLogs.join("\n") : "(no events yet)";

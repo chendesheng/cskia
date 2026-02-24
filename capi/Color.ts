@@ -11,12 +11,12 @@ export type Color4f = Float32Array<ArrayBuffer>;
 /** 3-element Float32Array [hue 0..360, saturation 0..1, value 0..1]. */
 export type HSV = Float32Array<ArrayBuffer>;
 
-export function Color(a: number, r: number, g: number, b: number): Color {
+export function newColor(a: number, r: number, g: number, b: number): Color {
   return (((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) |
     (b & 0xff)) >>> 0;
 }
 
-export function Color4f(
+export function createColor4f(
   r: number,
   g: number,
   b: number,
@@ -68,15 +68,15 @@ export function hsvToColor4f(hsv: HSV, alpha: number = 1.0): Color4f {
   return c;
 }
 
-export const Transparent: Color4f = Color4f(0, 0, 0, 0);
-export const Black: Color4f = Color4f(0, 0, 0, 1);
-export const White: Color4f = Color4f(1, 1, 1, 1);
-export const Red: Color4f = Color4f(1, 0, 0, 1);
-export const Green: Color4f = Color4f(0, 1, 0, 1);
-export const Blue: Color4f = Color4f(0, 0, 1, 1);
-export const Yellow: Color4f = Color4f(1, 1, 0, 1);
-export const Cyan: Color4f = Color4f(0, 1, 1, 1);
-export const Magenta: Color4f = Color4f(1, 0, 1, 1);
-export const DkGray: Color4f = Color4f(0.25, 0.25, 0.25, 1);
-export const Gray: Color4f = Color4f(0.50, 0.50, 0.50, 1);
-export const LtGray: Color4f = Color4f(0.75, 0.75, 0.75, 1);
+export const Transparent: Color4f = createColor4f(0, 0, 0, 0);
+export const Black: Color4f = createColor4f(0, 0, 0, 1);
+export const White: Color4f = createColor4f(1, 1, 1, 1);
+export const Red: Color4f = createColor4f(1, 0, 0, 1);
+export const Green: Color4f = createColor4f(0, 1, 0, 1);
+export const Blue: Color4f = createColor4f(0, 0, 1, 1);
+export const Yellow: Color4f = createColor4f(1, 1, 0, 1);
+export const Cyan: Color4f = createColor4f(0, 1, 1, 1);
+export const Magenta: Color4f = createColor4f(1, 0, 1, 1);
+export const DkGray: Color4f = createColor4f(0.25, 0.25, 0.25, 1);
+export const Gray: Color4f = createColor4f(0.50, 0.50, 0.50, 1);
+export const LtGray: Color4f = createColor4f(0.75, 0.75, 0.75, 1);

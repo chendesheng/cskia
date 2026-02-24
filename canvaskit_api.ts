@@ -1,5 +1,5 @@
+// @ts-ignore
 // Minimum TypeScript Version: 4.4
-/// <reference types="@webgpu/types" />
 
 export default function CanvasKitInit(
   opts?: CanvasKitInitOptions,
