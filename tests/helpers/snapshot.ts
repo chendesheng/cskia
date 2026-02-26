@@ -22,7 +22,10 @@ function sanitizeName(name: string): string {
 }
 
 function decodePNG(data: Uint8Array): { width: number; height: number; data: Uint8Array } {
-  const png = PNG.sync.read(data);
+  // pngjs requires a Node.js Buffer (with readUInt32BE); use the node-compat global via globalThis
+  // deno-lint-ignore no-explicit-any
+  const buf = (globalThis as Record<string, any>).Buffer.from(data);
+  const png = PNG.sync.read(buf);
   return { width: png.width, height: png.height, data: new Uint8Array(png.data) };
 }
 

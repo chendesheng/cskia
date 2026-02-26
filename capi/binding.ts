@@ -16,13 +16,10 @@ function pathExists(path: string): boolean {
 function resolveNativeLibDir(): string {
   const fileName = "libCSkia.dylib";
   const compiledDir = dirname(Deno.execPath());
-  const devDir = join(
-    dirname(fromFileUrl(import.meta.url)),
-    "..",
-    ".build",
-    "release",
-  );
-  const candidates = [compiledDir, devDir];
+  const packageDir = join(dirname(fromFileUrl(import.meta.url)), "..");
+  const devDebugDir = join(packageDir, ".build", "debug");
+  const devReleaseDir = join(packageDir, ".build", "release");
+  const candidates = [compiledDir, devDebugDir, devReleaseDir];
 
   for (const dir of candidates) {
     if (pathExists(join(dir, fileName))) return dir;
