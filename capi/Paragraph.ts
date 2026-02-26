@@ -56,7 +56,7 @@ export class Paragraph {
       countBytes,
     );
 
-    const count = countBuf[0];
+    const count = countBuf[0]!;
     if (count === 0 || !dataPtr) return [];
 
     // sk_text_box_t = { sk_rect_t rect (16 bytes), int32 direction (4 bytes) } = 20 bytes
@@ -94,7 +94,7 @@ export class Paragraph {
       affinityBytes,
     ) as number;
 
-    return { pos, affinity: affinityBuf[0] };
+    return { pos, affinity: affinityBuf[0]! };
   }
 
   didExceedMaxLines(): boolean {
@@ -129,7 +129,7 @@ export class Paragraph {
     const buf = new Int32Array(2);
     const bytes = new Uint8Array(buf.buffer) as Uint8Array<ArrayBuffer>;
     sk.sk_paragraph_get_word_boundary(this.#ptr, pos, bytes);
-    return { start: buf[0], end: buf[1] };
+    return { start: buf[0]!, end: buf[1]! };
   }
 
   getRectsForPlaceholders(): TextBox[] {
@@ -143,7 +143,7 @@ export class Paragraph {
       countBytes,
     );
 
-    const count = countBuf[0];
+    const count = countBuf[0]!;
     if (count === 0 || !dataPtr) return [];
 
     const BOX_SIZE = 20;

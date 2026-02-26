@@ -115,7 +115,7 @@ export class Canvas {
   drawRRect(rrect: RRect, paint: Paint): void {
     const rectBytes = toF32Bytes(rrectGetRect(rrect));
     if (rrectIsUniform(rrect)) {
-      sk.sk_canvas_draw_round_rect(this.#ptr, rectBytes, rrect[4], rrect[5], paint._ptr);
+      sk.sk_canvas_draw_round_rect(this.#ptr, rectBytes, rrect[4]!, rrect[5]!, paint._ptr);
     } else {
       const p = new Path();
       p.addRRect(rrect);

@@ -21,13 +21,13 @@ export function identity(): Matrix3x3 {
 
 export function multiply(...matrices: Matrix3x3[]): Matrix3x3 {
   if (matrices.length === 0) return identity();
-  let result = matrices[0];
+  let result: Matrix3x3 = matrices[0]!;
   for (let i = 1; i < matrices.length; i++) {
     const out = createMatrix();
     sk.sk_matrix_concat(
       toF32Bytes(out),
       toF32Bytes(result),
-      toF32Bytes(matrices[i]),
+      toF32Bytes(matrices[i]!),
     );
     result = out;
   }

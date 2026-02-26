@@ -197,8 +197,8 @@ export class Path {
   addRRect(rrect: InputRRect, isCCW?: boolean): Path {
     const arr = rrect instanceof Float32Array ? rrect : new Float32Array(rrect);
     const rectBytes = toF32Bytes(arr.subarray(0, 4));
-    const rx = arr.length >= 6 ? arr[4] : 0;
-    const ry = arr.length >= 6 ? arr[5] : 0;
+    const rx = arr.length >= 6 ? arr[4]! : 0;
+    const ry = arr.length >= 6 ? arr[5]! : 0;
     sk.sk_path_add_rounded_rect(this._ptr, rectBytes, rx, ry, isCCW ? 1 : 0);
     return this;
   }
@@ -364,11 +364,11 @@ export class Path {
     sk.sk_path_get_point(this._ptr, index, outBytes);
     const f32 = new Float32Array(outBytes.buffer);
     if (outputArray) {
-      outputArray.x = f32[0];
-      outputArray.y = f32[1];
+      outputArray.x = f32[0]!;
+      outputArray.y = f32[1]!;
       return outputArray;
     }
-    return { x: f32[0], y: f32[1] };
+    return { x: f32[0]!, y: f32[1]! };
   }
 
   isEmpty(): boolean {

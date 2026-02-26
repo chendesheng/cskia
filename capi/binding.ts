@@ -835,7 +835,7 @@ export function pointerArrayBuffer(
   const ab = new ArrayBuffer(8 * ptrs.length);
   const view = new DataView(ab);
   for (let i = 0; i < ptrs.length; i++) {
-    const p = Deno.UnsafePointer.value(ptrs[i]);
+    const p = Deno.UnsafePointer.value(ptrs[i]!);
     view.setBigUint64(i * 8, BigInt(p), true);
   }
   return new Uint8Array(ab);

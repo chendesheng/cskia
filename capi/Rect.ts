@@ -54,13 +54,13 @@ export function LTRBiRect(
  * Create an RRect with uniform corner radii, matching CanvasKit.RRectXY().
  */
 export function RRectXY(rect: Rect | number[], rx: number, ry: number): RRect {
-  const l = rect[0], t = rect[1], r = rect[2], b = rect[3];
+  const l = rect[0]!, t = rect[1]!, r = rect[2]!, b = rect[3]!;
   return new Float32Array([l, t, r, b, rx, ry, rx, ry, rx, ry, rx, ry]);
 }
 
 /** Extract the [left, top, right, bottom] portion of an RRect. */
 export function rrectGetRect(rrect: RRect): Rect {
-  return new Float32Array([rrect[0], rrect[1], rrect[2], rrect[3]]);
+  return new Float32Array([rrect[0]!, rrect[1]!, rrect[2]!, rrect[3]!]);
 }
 
 /** True when all four corners share the same rx and ry. */

@@ -7,7 +7,6 @@
 
 import pixelmatch from "npm:pixelmatch@^7";
 import { PNG } from "npm:pngjs@^7";
-import { Buffer } from "node:buffer";
 import { dirname, fromFileUrl, join } from "jsr:@std/path@^1";
 import { Surface } from "../../capi/Surface.ts";
 import type { Canvas } from "../../capi/Canvas.ts";
@@ -23,7 +22,7 @@ function sanitizeName(name: string): string {
 }
 
 function decodePNG(data: Uint8Array): { width: number; height: number; data: Uint8Array } {
-  const png = PNG.sync.read(Buffer.from(data));
+  const png = PNG.sync.read(data);
   return { width: png.width, height: png.height, data: new Uint8Array(png.data) };
 }
 
@@ -142,7 +141,7 @@ export async function assertImageSnapshot(
 
     const diffPng = new Uint8Array(
       PNG.sync.write(
-        Object.assign(new PNG({ width, height }), { data: Buffer.from(diffBuf) }),
+        Object.assign(new PNG({ width, height }), { data: diffBuf }),
       ),
     );
     writeFailureArtifact(`${name}-diff.png`, diffPng);

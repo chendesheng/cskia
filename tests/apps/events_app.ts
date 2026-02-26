@@ -22,7 +22,7 @@ function log(entry: Record<string, unknown>): void {
   if (entry.type === "mousemove" && line === lastLine) return;
   lastLine = line;
   console.log(line);
-  Deno.writeTextFileSync(logPath, line + "\n", { append: true });
+  Deno.writeTextFileSync(logPath!, line + "\n", { append: true });
 }
 
 function roundMouse(detail: {

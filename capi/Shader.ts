@@ -7,10 +7,10 @@ function packColors(colors: Color4f[]): Uint8Array<ArrayBuffer> {
   const n = colors.length;
   const data = new Float32Array(n * 4);
   for (let i = 0; i < n; i++) {
-    data[i * 4] = colors[i][0];
-    data[i * 4 + 1] = colors[i][1];
-    data[i * 4 + 2] = colors[i][2];
-    data[i * 4 + 3] = colors[i][3];
+    data[i * 4] = colors[i]![0]!;
+    data[i * 4 + 1] = colors[i]![1]!;
+    data[i * 4 + 2] = colors[i]![2]!;
+    data[i * 4 + 3] = colors[i]![3]!;
   }
   return toF32Bytes(data);
 }

@@ -9,7 +9,7 @@
 
 import { White } from "../../capi/Color.ts";
 import { GrDirectContext } from "../../capi/GrDirectContext.ts";
-import { Image } from "../../capi/Image.ts";
+import { Image as SkiaImage } from "../../capi/Image.ts";
 import { Paint } from "../../capi/Paint.ts";
 import { Surface } from "../../capi/Surface.ts";
 import { skLib } from "../../capi/binding.ts";
@@ -22,14 +22,14 @@ const grCtx = GrDirectContext.MakeMetal(app.metalDevice, app.metalQueue);
 
 const win = new Window(400, 300, "Image App");
 
-let image: Image | null = null;
+let image: SkiaImage | null = null;
 
 win.addEventListener("mousedown", async () => {
   if (image) return;
   const data = await Deno.readFile(
     new URL("../fixtures/icon.png", import.meta.url).pathname,
   );
-  image = Image.MakeFromEncoded(data);
+  image = SkiaImage.MakeFromEncoded(data);
   if (!image) throw new Error("Failed to decode image");
 });
 
@@ -74,7 +74,7 @@ win.show();
 app.setAppearance("light");
 await app.run();
 
-image?.delete();
+(image as SkiaImage | null)?.delete();
 grCtx.releaseResourcesAndAbandonContext();
 grCtx.delete();
 win.destroy();

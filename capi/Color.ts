@@ -35,10 +35,10 @@ export function Color4fFromColor(color: Color): Color4f {
 }
 
 export function color4fToColor(c: Color4f): Color {
-  const a = Math.round(c[3] * 255) & 0xff;
-  const r = Math.round(c[0] * 255) & 0xff;
-  const g = Math.round(c[1] * 255) & 0xff;
-  const b = Math.round(c[2] * 255) & 0xff;
+  const a = Math.round(c[3]! * 255) & 0xff;
+  const r = Math.round(c[0]! * 255) & 0xff;
+  const g = Math.round(c[1]! * 255) & 0xff;
+  const b = Math.round(c[2]! * 255) & 0xff;
   return ((a << 24) | (r << 16) | (g << 8) | b) >>> 0;
 }
 
@@ -52,9 +52,9 @@ export function color4fSetAlpha(c: Color4f, a: number): Color4f {
 }
 
 export function color4fToHSV(c: Color4f): HSV {
-  const r = Math.round(c[0] * 255) & 0xff;
-  const g = Math.round(c[1] * 255) & 0xff;
-  const b = Math.round(c[2] * 255) & 0xff;
+  const r = Math.round(c[0]! * 255) & 0xff;
+  const g = Math.round(c[1]! * 255) & 0xff;
+  const b = Math.round(c[2]! * 255) & 0xff;
   const hsv = new Float32Array(3);
   sk.sk_rgb_to_hsv(r, g, b, hsv);
   return hsv;

@@ -17,7 +17,7 @@ function assertMatrixClose(
 ) {
   assertEquals(actual.length, expected.length);
   for (let i = 0; i < actual.length; i++) {
-    assertAlmostEquals(actual[i], expected[i], tolerance, `element [${i}]`);
+    assertAlmostEquals(actual[i]!, expected[i]!, tolerance, `element [${i}]`);
   }
 }
 
@@ -55,17 +55,17 @@ Deno.test("mapPoints with identity leaves points unchanged", () => {
   const pts = [1, 2, 3, 4];
   const mapped = mapPoints(I, pts);
   for (let i = 0; i < pts.length; i++) {
-    assertAlmostEquals(mapped[i], pts[i], 1e-5);
+    assertAlmostEquals(mapped[i]!, pts[i]!, 1e-5);
   }
 });
 
 Deno.test("mapPoints with translation shifts points", () => {
   const t = translated(10, 20);
   const mapped = mapPoints(t, [1, 2, 3, 4]);
-  assertAlmostEquals(mapped[0], 11, 1e-5);
-  assertAlmostEquals(mapped[1], 22, 1e-5);
-  assertAlmostEquals(mapped[2], 13, 1e-5);
-  assertAlmostEquals(mapped[3], 24, 1e-5);
+  assertAlmostEquals(mapped[0]!, 11, 1e-5);
+  assertAlmostEquals(mapped[1]!, 22, 1e-5);
+  assertAlmostEquals(mapped[2]!, 13, 1e-5);
+  assertAlmostEquals(mapped[3]!, 24, 1e-5);
 });
 
 Deno.test("invert of singular matrix returns null", () => {
