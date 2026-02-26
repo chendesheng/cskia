@@ -264,7 +264,11 @@ export class Window extends EventTarget {
     winLib.symbols.window_show(this.#ptr);
   }
 
-  destroy(): void {
+  dispose(): void {
+    for (const cb of this.#callbacks) {
+      cb.close();
+    }
+    this.#callbacks = [];
     winLib.symbols.window_destroy(this.#ptr);
   }
 

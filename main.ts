@@ -156,4 +156,4 @@ await app.run();
 fontCollection.delete();
 grCtx.releaseResourcesAndAbandonContext();
 grCtx.delete();
-win.destroy();
+win.dispose();

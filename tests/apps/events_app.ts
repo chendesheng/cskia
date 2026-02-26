@@ -91,4 +91,4 @@ win.addEventListener("close", () => {
 win.show();
 await app.run();
 
-win.destroy();
+win.dispose();

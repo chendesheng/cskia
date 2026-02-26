@@ -77,4 +77,4 @@ await app.run();
 (image as SkiaImage | null)?.delete();
 grCtx.releaseResourcesAndAbandonContext();
 grCtx.delete();
-win.destroy();
+win.dispose();

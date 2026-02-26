@@ -56,4 +56,4 @@ await app.run();
 
 grCtx.releaseResourcesAndAbandonContext();
 grCtx.delete();
-win.destroy();
+win.dispose();
