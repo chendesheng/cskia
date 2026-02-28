@@ -715,9 +715,8 @@ public func appClipboardReadText(
 }
 
 @_cdecl("window_set_needs_display")
-public func windowSetNeedsDisplay(_ win: UnsafeMutableRawPointer?, _ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) {
+public func windowSetNeedsDisplay(_ win: UnsafeMutableRawPointer?) {
     guard let win else { return }
     let state = stateFrom(win)
-    print("setNeedsDisplay: \(x), \(y), \(width), \(height)")
-    state.metalView.setNeedsDisplay(NSRect(x: x, y: y, width: width, height: height))
+    state.metalView.setNeedsDisplay(state.metalView.bounds)
 }

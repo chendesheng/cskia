@@ -159,7 +159,7 @@ export const winLib = Deno.dlopen(libPath, {
     result: "void",
   },
   window_set_needs_display: {
-    parameters: ["pointer", "f64", "f64", "f64", "f64"],
+    parameters: ["pointer"],
     result: "void",
   },
   window_get_next_drawable_texture: {
